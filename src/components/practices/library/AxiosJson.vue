@@ -2,19 +2,13 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-// 💡 1. 백엔드 공용 주소
 const BASE_URL = 'https://jsonplaceholder.typicode.com/posts'
 
-// 💡 2. 반응형 상태 데이터
-const items = ref([]) // 서버에서 받아온 데이터 배열 박스
-const textInput = ref('') // 입력창과 연결된 글자 데이터 박스
+const items = ref([])
+const textInput = ref('')
 
-// ----------------------------------------------------
-// [READ] GET : 데이터 가져오기
-// ----------------------------------------------------
 const handleRead = async () => {
   try {
-    // 공부용으로 딱 3개만 들고 옵니다.
     const response = await axios.get(BASE_URL, { params: { _limit: 3 } })
     items.value = response.data
     console.log('GET 성공:', response.data)
@@ -23,39 +17,25 @@ const handleRead = async () => {
   }
 }
 
-// ----------------------------------------------------
-// [CREATE] POST : 데이터 추가하기
-// ----------------------------------------------------
 const handleCreate = async () => {
   if (!textInput.value.trim()) return
 
   try {
     const payload = { title: textInput.value, body: '샘플 내용', userId: 1 }
-
-    // POST 함수 구조: (주소, 보낼데이터)
     const response = await axios.post(BASE_URL, payload)
     console.log('POST 성공:', response.data)
-
-    // 응답 데이터를 배열 맨 앞에 추가하여 화면에 즉시 반영
     items.value.unshift(response.data)
-    textInput.value = '' // 입력창 비우기
+    textInput.value = ''
   } catch (error) {
     console.error('POST 실패:', error)
   }
 }
 
-// ----------------------------------------------------
-// [UPDATE] PUT : 특정 데이터 수정하기
-// ----------------------------------------------------
 const handleUpdate = async (id) => {
   try {
-    const editPayload = { title: '✨ 변조된 타이틀 데이터', body: '수정 완료', userId: 1 }
-
-    // PUT 함수 구조: (특정방주소, 교체할데이터)
+    const editPayload = { title: '변경된 타이틀 데이터', body: '수정 완료', userId: 1 }
     const response = await axios.put(`${BASE_URL}/${id}`, editPayload)
     console.log('PUT 성공:', response.data)
-
-    // 로컬 화면 배열에서 방금 고친 녀석을 찾아 새 영수증 데이터로 갈아 끼우기
     const index = items.value.findIndex((item) => item.id === id)
     if (index !== -1) {
       items.value[index] = response.data
@@ -65,23 +45,16 @@ const handleUpdate = async (id) => {
   }
 }
 
-// ----------------------------------------------------
-// [DELETE] DELETE : 특정 데이터 삭제하기
-// ----------------------------------------------------
 const handleDelete = async (id) => {
   try {
-    // DELETE 함수 구조: (특정방주소)
     const response = await axios.delete(`${BASE_URL}/${id}`)
     console.log('DELETE 성공. 상태 코드:', response.status)
-
-    // 반응형 배열에서 방금 지운 녀석만 필터로 걸러내서 화면에서 없애기
     items.value = items.value.filter((item) => item.id !== id)
   } catch (error) {
     console.error('DELETE 실패:', error)
   }
 }
 
-// 💡 3. 컴포넌트가 켜지자마자 자동으로 GET 호출
 onMounted(() => {
   handleRead()
 })

@@ -26,6 +26,7 @@ import ModelForm from './components/practices/basic/ModelForm.vue'
 import ModelModifier from './components/practices/basic/ModelModifier.vue'
 
 import StyleScoped from './components/practices/basic/StyleScoped.vue'
+import WatchersWatchEffect from './components/practices/composition/WatchersWatchEffect.vue'
 </script>
 
 <template>
@@ -63,6 +64,9 @@ import StyleScoped from './components/practices/basic/StyleScoped.vue'
     <h1>5. Vue Style Handling</h1>
     <hr />
     <StyleScoped />
+    <h1>6. Composition API</h1>
+    <hr />
+    <WatchersWatchEffect />
   </div>
 </template>
 

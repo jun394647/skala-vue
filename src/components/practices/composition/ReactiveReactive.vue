@@ -1,22 +1,18 @@
 <script setup>
 import { reactive } from 'vue'
 
-// 1. 객체형 reactive 상태
 const userReactive = reactive({
-  name: '이순신',
-  age: 30,
+  name: '장보고',
+  age: 27,
 })
 const celebrateReactive = () => {
   userReactive.age++
 }
 
-// 2. 배열형 reactive 상태
-const items = reactive(['사과', '바나나'])
-// 배열 요소 추가
+const items = reactive(['사과', '바나나', '수박'])
 const addItem = () => {
   items.push(`과일 ${items.length + 1}`)
 }
-// 배열 요소 삭제
 const removeItem = (index) => {
   items.splice(index, 1)
 }

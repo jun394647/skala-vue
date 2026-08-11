@@ -1,26 +1,21 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 
-// reactive로 선언한 묶음 상품 데이터
 const state = reactive({
-  productName: '노트북',
-  price: 1000,
+  productName: '키보드',
+  price: 45000,
 })
 
 const logAutoDeep = ref('대기 중...')
 const logTarget = ref('대기 중...')
 
-// 🟢 1) 변수명 그대로 감시 (자동 deep: true 작동)
 watch(state, (newVal, oldVal) => {
-  // newVal.price와 oldVal.price가 똑같이 2000으로 나옵니다!
   logAutoDeep.value = `[자동 deep] 가격 변동! 이전가격인척하는:${oldVal.price}원 ➡️ 현재가격:${newVal.price}원`
 })
 
-// 🟢 2) 화살표 함수로 특정 속성만 감시 (이전 값 추적 가능!)
 watch(
   () => state.price,
   (newPrice, oldPrice) => {
-    // 🔥 특정 알맹이 값만 추출했으므로 진짜 과거 가격(1000)이 정상 보존됩니다.
     logTarget.value = `[타겟 조준] 가격이 진짜 올랐음! 옛날값:${oldPrice}원 ➡️ 바뀐값:${newPrice}원`
   },
 )

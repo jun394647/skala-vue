@@ -2,19 +2,19 @@
 import { ref } from 'vue'
 
 const count = ref(0)
-const name = ref('홍길동')
+const name = ref('김민준')
 const isActive = ref(true)
-const items = ref(['사과', '배'])
+const items = ref(['사과', '배', '포도'])
 const user = ref({
   name: '이순신',
-  age: 30,
+  age: 33,
 })
 
 const increaseRef = () => {
   count.value++
 }
 const changeUserName = () => {
-  user.value.name = '장보고'
+  user.value.name = '유관순'
 }
 </script>
 

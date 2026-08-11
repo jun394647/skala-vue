@@ -2,9 +2,6 @@
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-// ==========================================
-// [실습 1] 비즈니스 Form: 초간단 회원가입 및 유효성 체크
-// ==========================================
 const userForm = ref({
   email: '',
   agree: false,
@@ -22,19 +19,12 @@ const handleRegister = () => {
   ElMessage.success('🎉 가입 신청이 정상적으로 완료되었습니다!')
 }
 
-// ==========================================
-// [실습 2] 커머스 Data: 쇼핑몰 수량 및 별점 관리
-// ==========================================
-const productQuantity = ref(1) // 수량 카운터 기본값
-const productRate = ref(4) // 별점 기본값 (별 4개)
+const productQuantity = ref(2)
+const productRate = ref(5)
 
-// ==========================================
-// [실습 3] 시스템 Feedback: 안전한 파일 삭제 및 프로그레스 바
-// ==========================================
 const downloadProgress = ref(0)
 const isDownloading = ref(false)
 
-// 파일 삭제 확인창 예시 (ElMessageBox)
 const confirmDelete = () => {
   ElMessageBox.confirm('서버에서 해당 파일을 영구히 삭제하시겠습니까?', '🔥 최종 경고', {
     confirmButtonText: '네, 삭제합니다',
@@ -49,7 +39,6 @@ const confirmDelete = () => {
     })
 }
 
-// 게이지 바 애니메이션 가동
 const startDownload = () => {
   if (isDownloading.value) return (isDownloading.value = true)
   downloadProgress.value = 0
