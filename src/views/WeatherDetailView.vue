@@ -1,9 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useConfigStore } from '@/stores/configStore'
 
 const route = useRoute()
 const router = useRouter()
+const configStore = useConfigStore()
 
 const mockDetails = {
   city_01: { name: '대한민국 서울특별시', temp: 28, status: '맑음', humidity: '55%', wind: '2.5m/s' },
@@ -19,6 +21,15 @@ onMounted(() => {
     cityData.value = mockDetails[id]
   }
 })
+
+const displayTemp = computed(() => {
+  if (!cityData.value) return 0
+  const rawTemp = cityData.value.temp
+  if (configStore.unit === 'fahrenheit') {
+    return Math.round((rawTemp * 9) / 5 + 32)
+  }
+  return rawTemp
+})
 </script>
 
 <template>
@@ -28,7 +39,7 @@ onMounted(() => {
 
     <div v-if="cityData" class="info-card">
       <h4>📍 지정 지역: {{ cityData.name }}</h4>
-      <p>실시간 기온: <strong>{{ cityData.temp }}°C</strong></p>
+      <p>실시간 기온: <strong>{{ displayTemp }}{{ configStore.unitSymbol }}</strong></p>
       <p>기상 현황: {{ cityData.status }}</p>
       <p>대기 습도: {{ cityData.humidity }}</p>
       <p>현재 풍속: {{ cityData.wind }}</p>
