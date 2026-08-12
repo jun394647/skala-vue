@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 
-const cityList = reactive(['대전', '광주'])
+const cityList = reactive(['삼성전자', '카카오'])
 
 const logAuto = ref('대기 중...')
 const logCopy = ref('대기 중...')
@@ -21,12 +21,12 @@ watch(
 <template>
   <div class="practice-section">
     <h2>reactive() 배열의 특정 인덱스/요소 감시하기</h2>
-    <h3>즐겨찾기 도시 목록 (reactive 배열)</h3>
+    <h3>관심 종목 목록 (reactive 배열)</h3>
     <p>
-      현재 등록된 도시: <strong>{{ cityList }}</strong>
+      현재 등록된 종목: <strong>{{ cityList }}</strong>
     </p>
-    <button @click="cityList.push('부산')">부산 추가 (push)</button> &nbsp;
-    <button @click="cityList.pop()">최근 도시 삭제 (pop)</button>
+    <button @click="cityList.push('네이버')">네이버 추가 (push)</button> &nbsp;
+    <button @click="cityList.pop()">최근 종목 삭제 (pop)</button>
 
     <div class="monitor auto">
       <h3>👁️‍🗨️ 1) cityList 변수명 쌩으로 감시</h3>

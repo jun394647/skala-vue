@@ -4,7 +4,7 @@ import { ref } from 'vue'
 const count = ref(0)
 const name = ref('김민준')
 const isActive = ref(true)
-const items = ref(['사과', '배', '포도'])
+const items = ref(['삼성전자', '카카오', '네이버'])
 const user = ref({
   name: '이순신',
   age: 33,
@@ -26,11 +26,11 @@ const changeUserName = () => {
     </p>
     <p>이름: <input v-model="name" />{{ name }}</p>
     <p>활성 상태: {{ isActive ? '활성' : '비활성' }}</p>
-    <p>과일 목록: {{ items.join(', ') }}</p>
+    <p>관심 종목: {{ items.join(', ') }}</p>
     <p>사용자 정보: 이름 - {{ user.name }}, 나이 - {{ user.age }}</p>
     <button @click="increaseRef">Ref 변수 증가</button>
     <button @click="isActive = !isActive">토글</button>
-    <button @click="items.push('귤')">과일 추가</button>
+    <button @click="items.push('LG에너지솔루션')">종목 추가</button>
     <button @click="changeUserName">사용자 이름 변경</button>
   </div>
 </template>

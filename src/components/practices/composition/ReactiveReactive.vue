@@ -9,9 +9,9 @@ const celebrateReactive = () => {
   userReactive.age++
 }
 
-const items = reactive(['사과', '바나나', '수박'])
+const items = reactive(['삼성전자', '카카오', '네이버'])
 const addItem = () => {
-  items.push(`과일 ${items.length + 1}`)
+  items.push(`관심종목 ${items.length + 1}`)
 }
 const removeItem = (index) => {
   items.splice(index, 1)
@@ -31,6 +31,6 @@ const removeItem = (index) => {
         <button @click="removeItem(index)" style="margin-left: 8px; padding: 2px 6px">삭제</button>
       </li>
     </ul>
-    <button @click="addItem">과일 항목 추가</button>
+    <button @click="addItem">관심종목 추가</button>
   </div>
 </template>

@@ -2,8 +2,8 @@
 import { reactive, ref, watch } from 'vue'
 
 const state = reactive({
-  productName: '키보드',
-  price: 45000,
+  productName: '삼성전자',
+  price: 71500,
 })
 
 const logAutoDeep = ref('대기 중...')
@@ -24,9 +24,9 @@ watch(
 <template>
   <div class="practice-section">
     <h2>reactive() 데이터 watch 감시 규칙</h2>
-    <h3>🛒 상품 정보 관리 (reactive)</h3>
-    <p>상품명: {{ state.productName }} / 가격: {{ state.price }}원</p>
-    <button @click="state.price += 500">가격 500원 인상</button>
+    <h3>💰 보유 종목 관리 (reactive)</h3>
+    <p>종목명: {{ state.productName }} / 가격: {{ state.price }}원</p>
+    <button @click="state.price += 500">가격 500원 상승</button>
 
     <div class="monitor auto">
       <p>👁️‍🗨️ 1) state 변수 통째로 감시 (deep 자동화)</p>

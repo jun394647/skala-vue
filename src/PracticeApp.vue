@@ -26,7 +26,29 @@ import ModelForm from './components/practices/basic/ModelForm.vue'
 import ModelModifier from './components/practices/basic/ModelModifier.vue'
 
 import StyleScoped from './components/practices/basic/StyleScoped.vue'
+
+import ReactiveRef from './components/practices/composition/ReactiveRef.vue'
+import ReactiveReactive from './components/practices/composition/ReactiveReactive.vue'
+import ComputedBasic from './components/practices/composition/ComputedBasic.vue'
+import WatchersBasic from './components/practices/composition/WatchersBasic.vue'
+import WatchersDeep from './components/practices/composition/WatchersDeep.vue'
+import WatchersMulti from './components/practices/composition/WatchersMulti.vue'
+import WatchersReactive from './components/practices/composition/WatchersReactive.vue'
+import WatchersReactiveArray from './components/practices/composition/WatchersReactiveArray.vue'
+import WatchersRefArray from './components/practices/composition/WatchersRefArray.vue'
 import WatchersWatchEffect from './components/practices/composition/WatchersWatchEffect.vue'
+
+import PropsEmitsParent from './components/practices/component/PropsEmitsParent.vue'
+import SlotDefaultParent from './components/practices/component/SlotDefaultParent.vue'
+import SlotNamedParent from './components/practices/component/SlotNamedParent.vue'
+import SlotScopedParent from './components/practices/component/SlotScopedParent.vue'
+import LifecycleParent from './components/practices/component/LifecycleParent.vue'
+
+import AxiosJson from './components/practices/library/AxiosJson.vue'
+import AxiosWeather from './components/practices/library/AxiosWeather.vue'
+import EcmaScript from './components/practices/library/EcmaScript.vue'
+import ElementPlus from './components/practices/library/ElementPlus.vue'
+import StoreCounter from './components/practices/library/StoreCounter.vue'
 </script>
 
 <template>
@@ -66,7 +88,30 @@ import WatchersWatchEffect from './components/practices/composition/WatchersWatc
     <StyleScoped />
     <h1>6. Composition API</h1>
     <hr />
+    <ReactiveRef />
+    <ReactiveReactive />
+    <ComputedBasic />
+    <WatchersBasic />
+    <WatchersDeep />
+    <WatchersMulti />
+    <WatchersReactive />
+    <WatchersReactiveArray />
+    <WatchersRefArray />
     <WatchersWatchEffect />
+    <h1>7. Vue Component</h1>
+    <hr />
+    <PropsEmitsParent />
+    <SlotDefaultParent />
+    <SlotNamedParent />
+    <SlotScopedParent />
+    <LifecycleParent />
+    <h1>8. Library 활용</h1>
+    <hr />
+    <AxiosJson />
+    <AxiosWeather />
+    <EcmaScript />
+    <ElementPlus />
+    <StoreCounter />
   </div>
 </template>
 

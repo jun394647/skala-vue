@@ -10,7 +10,6 @@
 </template>
 
 <style scoped>
-/* 내 방 전용 타이틀 디자인 */
 .title {
   color: #e84393;
   font-weight: bold;

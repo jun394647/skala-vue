@@ -9,7 +9,7 @@ defineProps({
 const emit = defineEmits(['update-request'])
 
 const sendNotification = () => {
-  const payload = 'Child에서 새로 만든 데이터'
+  const payload = '계좌 잔액 1,240,000원'
   emit('update-request', payload)
 }
 </script>

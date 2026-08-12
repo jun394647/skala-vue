@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 
-const message = ref('현재 서버 상태 양호')
-const userCount = ref(230)
+const message = ref('이번 달 결제 정상 처리됨')
+const userCount = ref(12)
 </script>
 
 <template>

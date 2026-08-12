@@ -6,34 +6,34 @@ const result2 = ref('')
 const result3 = ref('')
 
 const runTask1 = () => {
-  const members = ['김수원', '이서울', '박부산', '최대전']
+  const members = ['김민준', '이수아', '박도윤', '최지우']
   const rawData = { id: 102, grade: 'GOLD', details: { score: 88 } }
 
-  const memberContainsPark = members.includes('박부산')
+  const memberContainsPark = members.includes('박도윤')
 
   const {
     grade,
     details: { score },
   } = rawData
 
-  result1.value = `부산 포함 여부: ${memberContainsPark} / 등급: ${grade} / 점수: ${score}점`
+  result1.value = `박도윤 포함 여부: ${memberContainsPark} / 등급: ${grade} / 신용점수: ${score}점`
 }
 
 const runTask2 = () => {
-  const currentCart = ['Apple', 'Banana']
-  const newProduct = { name: 'Mango', stock: 0, preview: null }
+  const currentCart = ['국채', '회사채']
+  const newProduct = { name: '주식형펀드', stock: 0, preview: null }
 
   const updatedCart = [...currentCart, newProduct.name]
 
-  const imgStatus = newProduct?.preview ?? '이미지 준비중'
+  const imgStatus = newProduct?.preview ?? '상품설명 준비중'
 
   const finalStock = newProduct.stock ?? 10
 
-  result2.value = `카트: ${updatedCart} / 이미지: ${imgStatus} / 수량: ${finalStock}개`
+  result2.value = `포트폴리오: ${updatedCart} / 상품설명: ${imgStatus} / 보유좌수: ${finalStock}개`
 }
 
 const fetchUserId = () => new Promise((res) => setTimeout(() => res({ uid: 512 }), 400))
-const fetchUserProfile = (uid) => new Promise((res) => setTimeout(() => res({ uid, nick: 'Faker' }), 400))
+const fetchUserProfile = (uid) => new Promise((res) => setTimeout(() => res({ uid, nick: '김민준' }), 400))
 
 const runTask3 = async () => {
   result3.value = '⏳ 데이터 동기화 중...'

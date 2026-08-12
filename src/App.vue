@@ -2,7 +2,7 @@
 import PracticeApp from './PracticeApp.vue'
 import ExerciseApp from './ExerciseApp.vue'
 
-const MODE = 'practice'
+const MODE = 'exercise'
 </script>
 
 <template>

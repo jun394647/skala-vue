@@ -21,7 +21,7 @@ const handleCreate = async () => {
   if (!textInput.value.trim()) return
 
   try {
-    const payload = { title: textInput.value, body: '샘플 내용', userId: 1 }
+    const payload = { title: textInput.value, body: '거래 메모', userId: 1 }
     const response = await axios.post(BASE_URL, payload)
     console.log('POST 성공:', response.data)
     items.value.unshift(response.data)
@@ -33,7 +33,7 @@ const handleCreate = async () => {
 
 const handleUpdate = async (id) => {
   try {
-    const editPayload = { title: '변경된 타이틀 데이터', body: '수정 완료', userId: 1 }
+    const editPayload = { title: '수정된 거래 내역', body: '수정 완료', userId: 1 }
     const response = await axios.put(`${BASE_URL}/${id}`, editPayload)
     console.log('PUT 성공:', response.data)
     const index = items.value.findIndex((item) => item.id === id)
@@ -65,7 +65,7 @@ onMounted(() => {
     <h2>⚡ Axios CRUD 프로토타입 훈련</h2>
 
     <div class="input-zone">
-      <input v-model="textInput" placeholder="저장할 텍스트를 입력하세요" />
+      <input v-model="textInput" placeholder="거래 메모를 입력하세요" />
       <button @click="handleCreate" class="btn-post">POST (추가)</button>
     </div>
 

@@ -6,7 +6,6 @@ const age = ref(26)
 const logMessage = ref('대기 중...')
 
 watchEffect(() => {
-  // Vue가 자동으로 감시 리스트에 등록
   logMessage.value = `[자동 감지] 이름: ${username.value} / 나이: ${age.value}세`
 
   console.log('🤖 watchEffect가 내부 변수 변경을 감지하여 실행되었습니다.')

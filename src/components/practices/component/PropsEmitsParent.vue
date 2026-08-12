@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import PropsEmitsChild from './PropsEmitsChild.vue'
 
-const message = ref('Parent 초기 메시지입니다')
+const message = ref('초기 계좌 잔액: 0원')
 
 const handleUpdateRequest = (newValue) => {
   message.value = newValue

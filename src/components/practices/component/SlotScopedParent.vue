@@ -8,8 +8,8 @@ import SlotScopedChild from './SlotScopedChild.vue'
     <h3>상위 컴포넌트 (Parent)</h3>
     <SlotScopedChild v-slot="slotBag">
       <div class="display-panel">
-        <p>알림 메시지: {{ slotBag.text }}</p>
-        <p>접속자 수: {{ slotBag.count }}명</p>
+        <p>결제 상태: {{ slotBag.text }}</p>
+        <p>이번 달 결제 건수: {{ slotBag.count }}건</p>
       </div>
     </SlotScopedChild>
     <SlotScopedChild> </SlotScopedChild>
