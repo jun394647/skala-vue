@@ -25,7 +25,7 @@ import UnitToggler from './components/exercise/UnitToggler.vue'
   </div>
 
   <div class="app-container">
-    <h1>⛅ 과제 6: Axios 적용</h1>
+    <h1>⛅ 과제 4·5·6: 라우터·스토어·Axios 적용</h1>
     <hr />
     <div class="dashboard-wrapper">
       <nav class="navigation-bar">
