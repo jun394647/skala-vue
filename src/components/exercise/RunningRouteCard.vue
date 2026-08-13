@@ -47,6 +47,12 @@ const kakaoMapLink = computed(() => {
   return `https://map.kakao.com/link/map/러닝 코스,${coords.value.lat},${coords.value.lng}`
 })
 
+const primaryDistanceLabel = computed(() => {
+  if (courseType.value === 'gukbap' && coursePlace.value) return '국밥런'
+  if (actualDistanceKm.value) return `실제 약 ${actualDistanceKm.value.toFixed(1)}km 순환 코스`
+  return routeAdvice.value?.distance ?? ''
+})
+
 let kakaoSdkPromise = null
 const loadKakaoMapSdk = () => {
   if (window.kakao?.maps) return Promise.resolve()
@@ -357,8 +363,7 @@ onMounted(fetchLocationWeather)
       <div ref="mapContainer" class="route-map"></div>
       <p class="route-location">
         {{ locationName }} · {{ weather.temp }}°C · {{ friendlyStatus(weather.status) }} ·
-        <strong>{{ courseType === 'gukbap' && coursePlace ? '국밥런' : routeAdvice.distance }}</strong>
-        <span v-if="actualDistanceKm && courseType !== 'gukbap'">(실제 약 {{ actualDistanceKm.toFixed(1) }}km)</span>
+        <strong>{{ primaryDistanceLabel }}</strong>
       </p>
       <p v-if="courseType === 'gukbap' && coursePlace" class="route-tip">
         {{ coursePlace.name }}까지 약 {{ actualDistanceKm ? actualDistanceKm.toFixed(1) : '?' }}km, 든든하게 채우고
@@ -416,7 +421,7 @@ onMounted(fetchLocationWeather)
 }
 .route-map {
   width: 100%;
-  height: 130px;
+  height: 240px;
   border-radius: 8px;
   margin-bottom: 8px;
   background: var(--ex-input-bg, #f1f2f6);
