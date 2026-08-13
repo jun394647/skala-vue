@@ -1,4 +1,5 @@
 <script setup>
+// 과제 ④+⑤+⑥: 라우터 동적 세그먼트(cityId)로 상세 조회 + Pinia 단위 전환 + Axios 단건 요청
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useConfigStore } from '@/stores/configStore'

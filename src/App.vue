@@ -13,3 +13,6 @@ const MODE = 'exercise'
   <FarmApp v-else-if="MODE === 'farm'" />
   <ExerciseApp v-else />
 </template>
+
+<!-- ExerciseApp : 러닝 날씨
+FarmApp : 농사 날씨 -->

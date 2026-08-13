@@ -1,4 +1,5 @@
 <script setup>
+// 과제 ②: 날씨 컴포지션 — computed(검색 필터), watch(상태바), watchEffect(자동 추적)
 import { ref, computed, watch, watchEffect } from 'vue'
 
 const weatherList = ref([

@@ -1,3 +1,4 @@
+// 과제 ④: Vue Router 설정 — routes 4개(동적 세그먼트·쿼리 스트링·catch-all), 지연 로딩
 import { createRouter, createWebHistory } from 'vue-router'
 import WeatherHomeView from '../views/WeatherHomeView.vue'
 

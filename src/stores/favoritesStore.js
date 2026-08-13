@@ -1,3 +1,4 @@
+// 가이드 범위를 넘어선 추가 기능 — Pinia 스토어로 즐겨찾기 도시 관리
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 

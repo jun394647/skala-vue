@@ -1,4 +1,7 @@
 <script setup>
+// 과제 ⑥: Axios 실시간 API 연동 — Promise.all 병렬 요청, isLoading/에러 처리
+// (컴포넌트는 과제 ③, 라우팅은 과제 ④, 단위 전환은 과제 ⑤ 것을 그대로 재사용)
+// 즐겨찾기·러닝 한마디·러닝 음악 추천은 가이드 범위를 넘어선 추가 기능
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
@@ -6,6 +9,7 @@ import axios from 'axios'
 import BaseDashboardCard from '../components/exercise/BaseDashboardCard.vue'
 import SearchBar from '../components/exercise/SearchBar.vue'
 import WeatherCard from '../components/exercise/WeatherCard.vue'
+import RunningMusicCard from '../components/exercise/RunningMusicCard.vue'
 import { useFavoritesStore } from '../stores/favoritesStore'
 
 const router = useRouter()
@@ -110,6 +114,8 @@ const handleDetailJump = (id) => {
         다른 문장 보기
       </el-button>
     </el-card>
+
+    <RunningMusicCard :weather-list="weatherList" />
 
     <BaseDashboardCard>
       <SearchBar :current-query="searchQuery" @update-query="(val) => (searchQuery = val)" />

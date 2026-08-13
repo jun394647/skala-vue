@@ -1,4 +1,5 @@
 <script setup>
+// 과제 ①: 날씨 Mockup — v-for·:key, v-if/v-else, :value+@input(한글 처리), @click.stop
 import { ref } from 'vue'
 
 const weatherList = ref([

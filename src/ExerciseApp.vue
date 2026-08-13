@@ -1,43 +1,21 @@
 <script setup>
-import WeatherMockup from './components/exercise/WeatherMockup.vue'
-import WeatherComposition from './components/exercise/WeatherComposition.vue'
-import WeatherParent from './components/exercise/WeatherParent.vue'
+// 최종 서비스 진입점. 과제 ①(Mockup)·②(컴포지션)·③(컴포넌트)의 코드는
+// src/components/exercise/WeatherMockup.vue, WeatherComposition.vue, WeatherParent.vue에 그대로 남아있고,
+// 화면은 과제 ④(라우터)·⑤(Pinia 스토어)·⑥(Axios) 가 통합된 아래 대시보드 하나로 합쳐서 보여준다.
 import UnitToggler from './components/exercise/UnitToggler.vue'
 </script>
 
 <template>
-  <div class="app-container">
-    <h1>⛅ 과제 1: 날씨 (Mockup)</h1>
-    <hr />
-    <WeatherMockup />
-  </div>
-
-  <div class="app-container">
-    <h1>⛅ 과제 2: 날씨 (컴포지션)</h1>
-    <hr />
-    <WeatherComposition />
-  </div>
-
-  <div class="app-container">
-    <h1>⛅ 과제 3: 날씨 (컴포넌트)</h1>
-    <hr />
-    <WeatherParent />
-  </div>
-
-  <div class="app-container">
-    <h1>⛅ 과제 4·5·6: 라우터·스토어·Axios 적용</h1>
-    <hr />
-    <div class="dashboard-wrapper">
-      <nav class="navigation-bar">
-        <RouterLink to="/" class="nav-item">🌦️ 날씨 대시보드</RouterLink>
-        <span class="divider">|</span>
-        <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
-        <UnitToggler />
-      </nav>
-      <main>
-        <RouterView />
-      </main>
-    </div>
+  <div class="dashboard-wrapper">
+    <nav class="navigation-bar">
+      <RouterLink to="/" class="nav-item">🌦️ 날씨 대시보드</RouterLink>
+      <span class="divider">|</span>
+      <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
+      <UnitToggler />
+    </nav>
+    <main>
+      <RouterView />
+    </main>
   </div>
 </template>
 

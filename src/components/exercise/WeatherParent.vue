@@ -1,4 +1,5 @@
 <script setup>
+// 과제 ③: 날씨 컴포넌트 분리 — BaseDashboardCard(slot), SearchBar(props/emits), WeatherCard(props/emits)
 import { ref, computed, watch, watchEffect } from 'vue'
 import BaseDashboardCard from './BaseDashboardCard.vue'
 import SearchBar from './SearchBar.vue'

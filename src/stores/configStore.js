@@ -1,3 +1,4 @@
+// 과제 ⑤: Pinia 스토어 — 섭씨/화씨 단위를 여러 컴포넌트가 공유
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
