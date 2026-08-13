@@ -24,8 +24,10 @@ onMounted(async () => {
   if (targetCity) {
     isLoading.value = true
     try {
-      const API_KEY = '여기에_발급받은_32자리_키'
-      const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${targetCity.english}&appid=${API_KEY}&units=metric&lang=kr`)
+      const API_KEY = '0a8716d1e80c915aabfffb90c0ad1fd0'
+      const response = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?q=${targetCity.english}&appid=${API_KEY}&units=metric&lang=kr`,
+      )
 
       const raw = response.data
       cityData.value = {
@@ -58,7 +60,9 @@ const displayTemp = computed(() => {
     <h3>📊 지역별 상세 기상 관측 정보 (실시간 데이터 연동)</h3>
     <hr />
 
-    <div v-if="isLoading" style="text-align: center; padding: 20px 0; color: #7f8c8d">데이터베이스로부터 상세 정보를 동기화하는 중입니다...</div>
+    <div v-if="isLoading" style="text-align: center; padding: 20px 0; color: #7f8c8d">
+      데이터베이스로부터 상세 정보를 동기화하는 중입니다...
+    </div>
 
     <template v-else>
       <div v-if="cityData" class="info-card">

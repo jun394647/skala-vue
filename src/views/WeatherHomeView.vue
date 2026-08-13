@@ -15,7 +15,7 @@ const searchQuery = ref('')
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 const isLoading = ref(false)
 
-const API_KEY = '여기에_발급받은_32자리_키'
+const API_KEY = '0a8716d1e80c915aabfffb90c0ad1fd0'
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 
 const fetchRealTimeWeather = async () => {
@@ -89,12 +89,28 @@ const handleDetailJump = (id) => {
     <BaseDashboardCard>
       <h3>🏙️ 지역별 날씨 현황 (실시간 기상청 연동)</h3>
 
-      <p v-if="isLoading" style="text-align: center; color: #3498db; font-weight: bold; padding: 20px 0">🔄 글로벌 기상 위성으로부터 실시간 기상 데이터를 수신 중입니다...</p>
+      <p
+        v-if="isLoading"
+        style="text-align: center; color: #3498db; font-weight: bold; padding: 20px 0"
+      >
+        🔄 글로벌 기상 위성으로부터 실시간 기상 데이터를 수신 중입니다...
+      </p>
 
       <template v-else>
-        <WeatherCard v-for="item in filteredWeatherList" :key="item.id" :city-item="item" @select-card="(msg) => (selectedCityInfo = msg)" @click-detail="handleDetailJump(item.id)" />
+        <WeatherCard
+          v-for="item in filteredWeatherList"
+          :key="item.id"
+          :city-item="item"
+          @select-card="(msg) => (selectedCityInfo = msg)"
+          @click-detail="handleDetailJump(item.id)"
+        />
 
-        <p v-if="filteredWeatherList.length === 0" style="text-align: center; color: #e74c3c; padding: 10px 0">😭 검색 결과와 일치하는 도시가 없습니다.</p>
+        <p
+          v-if="filteredWeatherList.length === 0"
+          style="text-align: center; color: #e74c3c; padding: 10px 0"
+        >
+          😭 검색 결과와 일치하는 도시가 없습니다.
+        </p>
       </template>
     </BaseDashboardCard>
     <div class="status-bar">{{ selectedCityInfo }}</div>
