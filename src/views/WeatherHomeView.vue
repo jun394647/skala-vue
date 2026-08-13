@@ -15,7 +15,7 @@ const searchQuery = ref('')
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 const isLoading = ref(false)
 
-const API_KEY = '여기에_발급받은_32자리_키'
+const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 
 const fetchRealTimeWeather = async () => {

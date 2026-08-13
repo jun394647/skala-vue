@@ -1,6 +1,4 @@
 <script setup>
-import { ref } from 'vue'
-
 const welcomeMessage = 'Welcome to Jun Skala-Vue'
 </script>
 
