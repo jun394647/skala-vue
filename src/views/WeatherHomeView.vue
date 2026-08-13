@@ -116,6 +116,8 @@ const handleDetailJump = (id) => {
       </el-button>
     </el-card>
 
+    <RunningRouteCard />
+
     <RunningMusicCard :weather-list="weatherList" />
 
     <BaseDashboardCard>
@@ -155,8 +157,6 @@ const handleDetailJump = (id) => {
       </template>
     </BaseDashboardCard>
     <div class="status-bar">{{ selectedCityInfo }}</div>
-
-    <RunningRouteCard />
   </div>
 </template>
 
@@ -166,7 +166,11 @@ const handleDetailJump = (id) => {
 }
 .running-quote-text {
   margin: 0 0 12px;
+  font-family: Georgia, 'Noto Serif KR', serif;
   font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
   color: var(--ex-text, #2c3e50);
 }
 .favorite-filter {

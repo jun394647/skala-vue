@@ -121,7 +121,7 @@ h1 {
   border: 1px solid var(--ex-border);
   color: var(--ex-text);
 }
-input {
+input[type='text'] {
   padding: 8px;
   width: 90%;
   font-size: 14px;

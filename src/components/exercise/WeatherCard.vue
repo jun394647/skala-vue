@@ -26,10 +26,12 @@ const displayTemp = computed(() => {
 
 <template>
   <div class="weather-card" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
-    <button class="btn-favorite" @click.stop="favoritesStore.toggleFavorite(cityItem.id)">
-      {{ favoritesStore.isFavorite(cityItem.id) ? '⭐' : '☆' }}
-    </button>
-    <h4>{{ cityItem.name }} ({{ friendlyStatus(cityItem.status) }})</h4>
+    <div class="card-head">
+      <button class="btn-favorite" @click.stop="favoritesStore.toggleFavorite(cityItem.id)">
+        {{ favoritesStore.isFavorite(cityItem.id) ? '⭐' : '☆' }}
+      </button>
+      <h4>{{ cityItem.name }} ({{ friendlyStatus(cityItem.status) }})</h4>
+    </div>
     <p>현재 기온: {{ displayTemp }}{{ configStore.unitSymbol }}</p>
 
     <span v-if="cityItem.temp >= 25" class="badge hot">🔥 더움</span>
@@ -72,13 +74,20 @@ const displayTemp = computed(() => {
   padding: 6px 10px;
   cursor: pointer;
 }
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 70px;
+}
+.card-head h4 {
+  margin: 0;
+}
 .btn-favorite {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
   border: none;
   background: none;
   font-size: 20px;
+  line-height: 1;
   cursor: pointer;
   padding: 0;
 }
