@@ -1,16 +1,47 @@
 <script setup>
 // 가이드 범위를 넘어선 추가 기능 — 브라우저 위치 정보 + OpenWeatherMap으로 현재 위치 날씨 기반 코스 추천
-import { ref, onMounted } from 'vue'
+// + 카카오맵으로 현재 위치 지도 표시
+import { ref, nextTick, onMounted } from 'vue'
 import axios from 'axios'
 import { friendlyStatus } from '../../utils/weatherText'
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather'
+const KAKAO_MAP_KEY = import.meta.env.VITE_MOVIE_API_KEY
 
 const locationName = ref('')
 const weather = ref(null)
 const routeAdvice = ref(null)
 const status = ref('idle')
+const mapContainer = ref(null)
+
+let kakaoSdkPromise = null
+const loadKakaoMapSdk = () => {
+  if (window.kakao?.maps) return Promise.resolve()
+  if (!kakaoSdkPromise) {
+    kakaoSdkPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_KEY}&autoload=false`
+      script.onload = () => window.kakao.maps.load(resolve)
+      script.onerror = reject
+      document.head.appendChild(script)
+    })
+  }
+  return kakaoSdkPromise
+}
+
+const renderMap = async (latitude, longitude) => {
+  try {
+    await loadKakaoMapSdk()
+    await nextTick()
+    if (!mapContainer.value) return
+    const center = new window.kakao.maps.LatLng(latitude, longitude)
+    const map = new window.kakao.maps.Map(mapContainer.value, { center, level: 4 })
+    new window.kakao.maps.Marker({ position: center, map })
+  } catch (error) {
+    console.error('🔴 카카오맵 로딩 실패:', error)
+  }
+}
 
 const pickRoute = (w) => {
   if (w.rain) {
@@ -51,6 +82,7 @@ const fetchLocationWeather = () => {
         }
         routeAdvice.value = pickRoute(weather.value)
         status.value = 'ready'
+        renderMap(latitude, longitude)
       } catch (error) {
         console.error('🔴 위치 기반 날씨 조회 실패:', error)
         status.value = 'error'
@@ -73,6 +105,7 @@ onMounted(fetchLocationWeather)
     <p v-else-if="status === 'denied'">위치 권한을 허용하면 주변 날씨에 맞는 코스를 추천해드려요.</p>
     <p v-else-if="status === 'unsupported' || status === 'error'">위치 기반 추천을 사용할 수 없습니다.</p>
     <template v-else-if="status === 'ready'">
+      <div ref="mapContainer" class="route-map"></div>
       <p class="route-location">{{ locationName }} · {{ weather.temp }}°C · {{ friendlyStatus(weather.status) }}</p>
       <p class="route-distance">{{ routeAdvice.distance }}</p>
       <p class="route-tip">{{ routeAdvice.tip }}</p>
@@ -87,6 +120,13 @@ onMounted(fetchLocationWeather)
   margin-bottom: 15px;
   --el-card-bg-color: var(--ex-card-bg, #fff);
   color: var(--ex-text, #2c3e50);
+}
+.route-map {
+  width: 100%;
+  height: 200px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: var(--ex-input-bg, #f1f2f6);
 }
 .route-location {
   font-weight: bold;
