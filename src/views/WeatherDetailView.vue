@@ -24,7 +24,7 @@ onMounted(async () => {
   if (targetCity) {
     isLoading.value = true
     try {
-      const API_KEY = '0a8716d1e80c915aabfffb90c0ad1fd0'
+      const API_KEY = '여기에_발급받은_32자리_키'
       const response = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?q=${targetCity.english}&appid=${API_KEY}&units=metric&lang=kr`,
       )
