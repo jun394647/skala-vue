@@ -120,8 +120,6 @@ const cropShape = {
   persimmon: 'tree',
 }
 
-const mainCropShape = computed(() => (mainCrop.value ? cropShape[mainCrop.value.id] : null))
-
 const daylightHours = computed(() => {
   if (!weather.value) return 0
   return (weather.value.sunset - weather.value.sunrise) / 3600
@@ -358,73 +356,76 @@ onUnmounted(() => {
               <div v-if="weather.rainVolume > 0" class="hero-rain">☔ 지금 1시간 강수량 {{ weather.rainVolume }}mm</div>
             </section>
 
-            <section v-if="mainCrop" class="main-crop-card">
-              <div class="main-crop-info">
-                <div class="main-crop-eyebrow">지금 가장 신경 써야 할 작물</div>
-                <div class="main-crop-name"><span aria-hidden="true">{{ mainCrop.icon }}</span> {{ mainCrop.name }}</div>
-                <span class="crop-badge" :class="mainCrop.level" :aria-label="`${mainCrop.name}, ${levelLabel[mainCrop.level]} 등급`">{{ levelLabel[mainCrop.level] }}</span>
-                <p class="main-crop-desc">{{ cropMoodText[mainCrop.level] }}</p>
+            <section v-if="mainCrop" class="field-card">
+              <div class="field-header">
+                <div class="field-title">🌱 우리 밭</div>
+                <div class="field-caption">
+                  <span aria-hidden="true">{{ mainCrop.icon }}</span> {{ mainCrop.name }}이(가) 지금 가장 신경 써야 할 작물이에요 — {{ cropMoodText[mainCrop.level] }}
+                </div>
               </div>
-              <svg v-if="mainCropShape === 'stalk'" viewBox="0 0 120 140" class="plant-illust" :class="mainCrop.level" aria-hidden="true">
-                <ellipse cx="60" cy="128" rx="34" ry="8" class="plant-ground" />
-                <line x1="60" y1="128" x2="60" y2="40" class="plant-stem" />
-                <g class="plant-leaf" transform-origin="60px 70px">
-                  <path d="M60 70 Q30 62 20 42" class="plant-blade" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 95px">
-                  <path d="M60 95 Q90 87 100 67" class="plant-blade" />
-                </g>
-                <g class="plant-grain" transform-origin="60px 40px">
-                  <ellipse cx="60" cy="26" rx="8" ry="18" class="plant-bud" />
-                </g>
-              </svg>
+              <div class="field-ground">
+                <div v-for="crop in visibleCropStatus" :key="crop.id" class="field-plant-slot" :class="{ priority: crop.id === mainCrop.id }">
+                  <svg v-if="cropShape[crop.id] === 'stalk'" viewBox="0 0 120 140" class="plant-illust mini" :class="crop.level" aria-hidden="true">
+                    <line x1="60" y1="128" x2="60" y2="40" class="plant-stem" />
+                    <g class="plant-leaf" transform-origin="60px 70px">
+                      <path d="M60 70 Q30 62 20 42" class="plant-blade" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 95px">
+                      <path d="M60 95 Q90 87 100 67" class="plant-blade" />
+                    </g>
+                    <g class="plant-grain" transform-origin="60px 40px">
+                      <ellipse cx="60" cy="26" rx="8" ry="18" class="plant-bud" />
+                    </g>
+                  </svg>
 
-              <svg v-else-if="mainCropShape === 'rosette'" viewBox="0 0 120 140" class="plant-illust" :class="mainCrop.level" aria-hidden="true">
-                <ellipse cx="60" cy="120" rx="38" ry="10" class="plant-ground" />
-                <g class="plant-leaf" transform-origin="60px 110px">
-                  <ellipse cx="60" cy="90" rx="16" ry="26" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 110px">
-                  <ellipse cx="34" cy="100" rx="16" ry="24" transform="rotate(-35 34 100)" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 110px">
-                  <ellipse cx="86" cy="100" rx="16" ry="24" transform="rotate(35 86 100)" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 110px">
-                  <ellipse cx="46" cy="112" rx="14" ry="20" transform="rotate(-70 46 112)" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 110px">
-                  <ellipse cx="74" cy="112" rx="14" ry="20" transform="rotate(70 74 112)" />
-                </g>
-              </svg>
+                  <svg v-else-if="cropShape[crop.id] === 'rosette'" viewBox="0 0 120 140" class="plant-illust mini" :class="crop.level" aria-hidden="true">
+                    <g class="plant-leaf" transform-origin="60px 110px">
+                      <ellipse cx="60" cy="90" rx="16" ry="26" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 110px">
+                      <ellipse cx="34" cy="100" rx="16" ry="24" transform="rotate(-35 34 100)" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 110px">
+                      <ellipse cx="86" cy="100" rx="16" ry="24" transform="rotate(35 86 100)" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 110px">
+                      <ellipse cx="46" cy="112" rx="14" ry="20" transform="rotate(-70 46 112)" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 110px">
+                      <ellipse cx="74" cy="112" rx="14" ry="20" transform="rotate(70 74 112)" />
+                    </g>
+                  </svg>
 
-              <svg v-else-if="mainCropShape === 'tree'" viewBox="0 0 120 140" class="plant-illust" :class="mainCrop.level" aria-hidden="true">
-                <ellipse cx="60" cy="128" rx="30" ry="7" class="plant-ground" />
-                <line x1="60" y1="128" x2="60" y2="70" class="plant-trunk" />
-                <g class="plant-canopy" transform-origin="60px 70px">
-                  <circle cx="60" cy="50" r="34" class="plant-canopy-shape" />
-                </g>
-                <circle cx="45" cy="45" r="5" class="plant-fruit" />
-                <circle cx="75" cy="55" r="5" class="plant-fruit" />
-                <circle cx="60" cy="34" r="5" class="plant-fruit" />
-              </svg>
+                  <svg v-else-if="cropShape[crop.id] === 'tree'" viewBox="0 0 120 140" class="plant-illust mini" :class="crop.level" aria-hidden="true">
+                    <line x1="60" y1="128" x2="60" y2="70" class="plant-trunk" />
+                    <g class="plant-canopy" transform-origin="60px 70px">
+                      <circle cx="60" cy="50" r="34" class="plant-canopy-shape" />
+                    </g>
+                    <circle cx="45" cy="45" r="5" class="plant-fruit" />
+                    <circle cx="75" cy="55" r="5" class="plant-fruit" />
+                    <circle cx="60" cy="34" r="5" class="plant-fruit" />
+                  </svg>
 
-              <svg v-else-if="mainCropShape === 'pepper'" viewBox="0 0 120 140" class="plant-illust" :class="mainCrop.level" aria-hidden="true">
-                <ellipse cx="60" cy="128" rx="30" ry="7" class="plant-ground" />
-                <line x1="60" y1="128" x2="60" y2="50" class="plant-stem" />
-                <g class="plant-leaf" transform-origin="60px 75px">
-                  <ellipse cx="35" cy="75" rx="16" ry="8" />
-                </g>
-                <g class="plant-leaf" transform-origin="60px 95px">
-                  <ellipse cx="85" cy="95" rx="16" ry="8" />
-                </g>
-                <g class="plant-pod" transform-origin="60px 60px">
-                  <path d="M60 60 Q52 78 60 94 Q68 78 60 60 Z" class="pod-shape" />
-                </g>
-                <g class="plant-pod" transform-origin="76px 68px">
-                  <path d="M76 68 Q68 86 76 100 Q84 86 76 68 Z" class="pod-shape" />
-                </g>
-              </svg>
+                  <svg v-else viewBox="0 0 120 140" class="plant-illust mini" :class="crop.level" aria-hidden="true">
+                    <line x1="60" y1="128" x2="60" y2="50" class="plant-stem" />
+                    <g class="plant-leaf" transform-origin="60px 75px">
+                      <ellipse cx="35" cy="75" rx="16" ry="8" />
+                    </g>
+                    <g class="plant-leaf" transform-origin="60px 95px">
+                      <ellipse cx="85" cy="95" rx="16" ry="8" />
+                    </g>
+                    <g class="plant-pod" transform-origin="60px 60px">
+                      <path d="M60 60 Q52 78 60 94 Q68 78 60 60 Z" class="pod-shape" />
+                    </g>
+                    <g class="plant-pod" transform-origin="76px 68px">
+                      <path d="M76 68 Q68 86 76 100 Q84 86 76 68 Z" class="pod-shape" />
+                    </g>
+                  </svg>
+
+                  <div class="field-plant-label">{{ crop.icon }} {{ crop.name }}</div>
+                  <span class="crop-badge small" :class="crop.level" :aria-label="`${crop.name}, ${levelLabel[crop.level]} 등급`">{{ levelLabel[crop.level] }}</span>
+                </div>
+              </div>
             </section>
 
             <section class="crop-section">
@@ -947,46 +948,77 @@ onUnmounted(() => {
   margin-top: 4px;
 }
 
-.main-crop-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.field-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 18px;
   padding: 24px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
-.main-crop-info {
-  flex: 1;
-  min-width: 180px;
+.field-header {
+  margin-bottom: 16px;
 }
 
-.main-crop-eyebrow {
-  font-size: calc(0.9rem * var(--font-scale, 1));
-  color: #93a2ba;
-  font-weight: 700;
+.field-title {
+  font-size: calc(1.3rem * var(--font-scale, 1));
+  font-weight: 800;
+  color: #ffffff;
   margin-bottom: 8px;
 }
 
-.main-crop-name {
-  font-size: calc(1.6rem * var(--font-scale, 1));
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 10px;
-}
-
-.main-crop-desc {
+.field-caption {
   font-size: calc(1.05rem * var(--font-scale, 1));
   color: #cdd8ea;
-  margin: 10px 0 0;
+}
+
+.field-ground {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 24px 16px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #4a3524 0%, #2e2013 100%);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.16) 0 3px, transparent 3px 42px),
+    linear-gradient(180deg, #4a3524 0%, #2e2013 100%);
+}
+
+.field-plant-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 92px;
+  padding: 6px;
+  border-radius: 14px;
+}
+
+.field-plant-slot.priority {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(243, 167, 18, 0.6);
+}
+
+.field-plant-label {
+  font-size: calc(0.9rem * var(--font-scale, 1));
+  font-weight: 700;
+  color: #f3f6fa;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.crop-badge.small {
+  font-size: calc(0.75rem * var(--font-scale, 1));
+  padding: 2px 10px;
+  margin-top: 4px;
 }
 
 .plant-illust {
   width: 130px;
   flex: 0 0 auto;
+}
+
+.plant-illust.mini {
+  width: 68px;
 }
 
 .plant-ground {
