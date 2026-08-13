@@ -28,7 +28,8 @@ const handleGoHome = () => {
 
 <style scoped>
 .description-box {
-  background-color: #f8f9fa;
+  background-color: var(--ex-input-bg, #f8f9fa);
+  color: var(--ex-text, #2c3e50);
   padding: 12px;
   border-radius: 6px;
   line-height: 1.5;
@@ -42,7 +43,7 @@ ul {
 
 li {
   margin-bottom: 6px;
-  color: #555;
+  color: var(--ex-text-soft, #555);
 }
 
 code {

@@ -27,17 +27,17 @@ const goHome = () => {
   justify-content: center;
   align-items: center;
   min-height: 80vh;
-  background-color: #f8f9fa;
+  background-color: var(--ex-page-bg, #f8f9fa);
   font-family: 'Noto Sans KR', sans-serif;
 }
 
 .not-found-content {
   text-align: center;
-  background-color: #ffffff;
+  background-color: var(--ex-card-bg, #ffffff);
   padding: 50px;
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--ex-border, #e9ecef);
 }
 
 .error-icon {
@@ -48,7 +48,7 @@ const goHome = () => {
 h2 {
   font-size: 2rem;
   font-weight: 700;
-  color: #343a40;
+  color: var(--ex-text, #343a40);
   margin-bottom: 15px;
   letter-spacing: -0.5px;
 }

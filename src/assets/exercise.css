@@ -1,8 +1,33 @@
+:root {
+  --ex-page-bg: #f4f6f8;
+  --ex-card-bg: #ffffff;
+  --ex-text: #2c3e50;
+  --ex-text-soft: #7f8c8d;
+  --ex-border: #e9ecef;
+  --ex-nav-bg: #ffffff;
+  --ex-input-bg: #f8f9fa;
+}
+
+html.dark {
+  --ex-page-bg: #12161d;
+  --ex-card-bg: #252c38;
+  --ex-text: #e4e9f0;
+  --ex-text-soft: #9aa5b1;
+  --ex-border: #3a4453;
+  --ex-nav-bg: #252c38;
+  --ex-input-bg: #1c222c;
+}
+
+body:has(.app-container) {
+  background-color: var(--ex-page-bg);
+  transition: background-color 0.2s ease;
+}
+
 .app-container {
   max-width: 900px;
   margin: 40px 10px 40px 10px;
   padding: 30px 40px;
-  background-color: #ffffff;
+  background-color: var(--ex-card-bg);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   font-family:
@@ -12,12 +37,12 @@
     system-ui,
     Roboto,
     sans-serif;
-  color: #2c3e50;
+  color: var(--ex-text);
 }
 .app-container h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--ex-text);
   margin-top: 48px;
   margin-bottom: 12px;
   display: flex;
@@ -29,13 +54,13 @@
 }
 .app-container hr {
   border: none;
-  border-top: 2px solid #e9ecef;
+  border-top: 2px solid var(--ex-border);
   margin-bottom: 24px;
 }
 h1 {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1a252f;
+  color: var(--ex-text);
   margin-top: 40px;
   margin-bottom: 8px;
 }
@@ -44,7 +69,7 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #ffffff;
+  background-color: var(--ex-nav-bg);
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -52,17 +77,29 @@ h1 {
 }
 .nav-item {
   text-decoration: none;
-  color: #7f8c8d;
+  color: var(--ex-text-soft);
   font-weight: bold;
   font-size: 16px;
   transition: color 0.2s ease;
 }
 .nav-item:hover {
-  color: #2c3e50;
+  color: var(--ex-text);
 }
 .divider {
   margin: 0 15px;
-  color: #dcdde1;
+  color: var(--ex-border);
+}
+
+.dark-mode-toggle {
+  margin-left: 15px;
+  border: 1px solid var(--ex-border);
+  background: var(--ex-input-bg);
+  color: var(--ex-text);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .navigation-bar .router-link-exact-active {
@@ -77,16 +114,21 @@ h1 {
 }
 .search-box,
 .list-box {
-  background: #f8f9fa;
+  background: var(--ex-input-bg);
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 15px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--ex-border);
+  color: var(--ex-text);
 }
 input {
   padding: 8px;
   width: 90%;
   font-size: 14px;
+  background: var(--ex-card-bg);
+  color: var(--ex-text);
+  border: 1px solid var(--ex-border);
+  border-radius: 4px;
 }
 .weather-card {
   background: #fff;

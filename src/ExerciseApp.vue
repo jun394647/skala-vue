@@ -2,7 +2,26 @@
 // 최종 서비스 진입점. 과제 ①(Mockup)·②(컴포지션)·③(컴포넌트)의 코드는
 // src/components/exercise/WeatherMockup.vue, WeatherComposition.vue, WeatherParent.vue에 그대로 남아있고,
 // 화면은 과제 ④(라우터)·⑤(Pinia 스토어)·⑥(Axios) 가 통합된 아래 대시보드 하나로 합쳐서 보여준다.
+import { ref, onMounted, onUnmounted } from 'vue'
 import UnitToggler from './components/exercise/UnitToggler.vue'
+
+const DARK_MODE_KEY = 'exercise-dark-mode'
+const isDark = ref(localStorage.getItem(DARK_MODE_KEY) === '1')
+
+const applyDarkMode = () => {
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
+
+const toggleDarkMode = () => {
+  isDark.value = !isDark.value
+  localStorage.setItem(DARK_MODE_KEY, isDark.value ? '1' : '0')
+  applyDarkMode()
+}
+
+onMounted(applyDarkMode)
+onUnmounted(() => {
+  document.documentElement.classList.remove('dark')
+})
 </script>
 
 <template>
@@ -12,6 +31,9 @@ import UnitToggler from './components/exercise/UnitToggler.vue'
       <span class="divider">|</span>
       <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
       <UnitToggler />
+      <button class="dark-mode-toggle" @click="toggleDarkMode">
+        {{ isDark ? '☀️ 라이트모드' : '🌙 다크모드' }}
+      </button>
     </nav>
     <main>
       <RouterView />

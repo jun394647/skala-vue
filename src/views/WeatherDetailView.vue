@@ -3,6 +3,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useConfigStore } from '@/stores/configStore'
+import { friendlyStatus } from '@/utils/weatherText'
 import axios from 'axios'
 
 const route = useRoute()
@@ -71,7 +72,7 @@ const displayTemp = computed(() => {
         <p>
           실시간 기온: <strong>{{ displayTemp }}{{ configStore.unitSymbol }}</strong>
         </p>
-        <p>기상 현황: {{ cityData.status }}</p>
+        <p>기상 현황: {{ friendlyStatus(cityData.status) }}</p>
         <p>대기 습도: {{ cityData.humidity }}</p>
         <p>현재 풍속: {{ cityData.wind }}</p>
       </div>
@@ -87,13 +88,14 @@ const displayTemp = computed(() => {
 <style scoped>
 .detail-container {
   margin: 0 auto;
-  background: white;
+  background: var(--ex-card-bg, white);
+  color: var(--ex-text, #2c3e50);
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 .info-card {
-  background: #f1f2f6;
+  background: var(--ex-input-bg, #f1f2f6);
   padding: 15px;
   border-radius: 6px;
   margin: 15px 0;

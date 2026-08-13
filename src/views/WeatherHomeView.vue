@@ -10,6 +10,7 @@ import BaseDashboardCard from '../components/exercise/BaseDashboardCard.vue'
 import SearchBar from '../components/exercise/SearchBar.vue'
 import WeatherCard from '../components/exercise/WeatherCard.vue'
 import RunningMusicCard from '../components/exercise/RunningMusicCard.vue'
+import RunningRouteCard from '../components/exercise/RunningRouteCard.vue'
 import { useFavoritesStore } from '../stores/favoritesStore'
 
 const router = useRouter()
@@ -154,6 +155,8 @@ const handleDetailJump = (id) => {
       </template>
     </BaseDashboardCard>
     <div class="status-bar">{{ selectedCityInfo }}</div>
+
+    <RunningRouteCard />
   </div>
 </template>
 
@@ -164,7 +167,7 @@ const handleDetailJump = (id) => {
 .running-quote-text {
   margin: 0 0 12px;
   font-style: italic;
-  color: #2c3e50;
+  color: var(--ex-text, #2c3e50);
 }
 .favorite-filter {
   display: block;

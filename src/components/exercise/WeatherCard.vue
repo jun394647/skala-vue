@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useConfigStore } from '../../stores/configStore'
 import { useFavoritesStore } from '../../stores/favoritesStore'
+import { friendlyStatus } from '../../utils/weatherText'
 
 const props = defineProps({
   cityItem: {
@@ -28,7 +29,7 @@ const displayTemp = computed(() => {
     <button class="btn-favorite" @click.stop="favoritesStore.toggleFavorite(cityItem.id)">
       {{ favoritesStore.isFavorite(cityItem.id) ? '⭐' : '☆' }}
     </button>
-    <h4>{{ cityItem.name }} ({{ cityItem.status }})</h4>
+    <h4>{{ cityItem.name }} ({{ friendlyStatus(cityItem.status) }})</h4>
     <p>현재 기온: {{ displayTemp }}{{ configStore.unitSymbol }}</p>
 
     <span v-if="cityItem.temp >= 25" class="badge hot">🔥 더움</span>
@@ -42,8 +43,9 @@ const displayTemp = computed(() => {
 
 <style scoped>
 .weather-card {
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--ex-card-bg, #fff);
+  border: 1px solid var(--ex-border, #dee2e6);
+  color: var(--ex-text, #2c3e50);
   padding: 12px;
   margin-bottom: 10px;
   border-radius: 6px;
