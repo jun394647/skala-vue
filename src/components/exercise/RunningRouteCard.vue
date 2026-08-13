@@ -22,6 +22,17 @@ const coords = ref(null)
 const routeAscent = ref(null)
 const actualDistanceKm = ref(null)
 
+const courseType = ref('auto')
+const coursePlace = ref(null)
+const courseTypeOptions = [
+  { value: 'auto', label: '추천' },
+  { value: 'view', label: '뷰 좋은 코스' },
+  { value: 'park', label: '공원 코스' },
+  { value: 'city', label: '시티런' },
+  { value: 'gukbap', label: '국밥런' },
+]
+const COURSE_KEYWORDS = { view: '전망대', park: '공원', city: '지하철역', gukbap: '국밥' }
+
 const caloriesEstimate = computed(() => {
   const distanceKm = actualDistanceKm.value ?? routeAdvice.value?.distanceKm
   if (!distanceKm) return null
@@ -42,7 +53,7 @@ const loadKakaoMapSdk = () => {
   if (!kakaoSdkPromise) {
     kakaoSdkPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script')
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_KEY}&autoload=false`
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_KEY}&libraries=services&autoload=false`
       script.onload = () => window.kakao.maps.load(resolve)
       script.onerror = reject
       document.head.appendChild(script)
@@ -79,9 +90,27 @@ const buildLoopWaypoints = (lat, lng, distanceKm, count = 6) => {
   return waypoints
 }
 
+// 코스 타입(공원/뷰/시티런) 선택 시 루프 웨이포인트 중 POI와 가장 가까운 지점을 POI 좌표로 치환해 그쪽을 지나가게 유도한다
+const biasWaypointsToward = (points, poi) => {
+  if (!poi) return points
+  let closestIndex = 0
+  let closestDistSq = Infinity
+  points.forEach((p, i) => {
+    const distSq = (p.lat - poi.lat) ** 2 + (p.lng - poi.lng) ** 2
+    if (distSq < closestDistSq) {
+      closestDistSq = distSq
+      closestIndex = i
+    }
+  })
+  const biased = [...points]
+  biased[closestIndex] = { lat: poi.lat, lng: poi.lng }
+  return biased
+}
+
 // ORS는 실도로 경로용 서버 프록시(api/route.js) — GitHub Pages엔 서버가 없어 404가 정상이며, 이 경우 합성 원형 코스로 조용히 폴백한다
-const fetchRealRoutePath = async (lat, lng, distanceKm) => {
-  const coordinates = buildLoopWaypoints(lat, lng, distanceKm).map((p) => [p.lng, p.lat])
+const fetchRealRoutePath = async (lat, lng, distanceKm, poi = null) => {
+  const waypoints = biasWaypointsToward(buildLoopWaypoints(lat, lng, distanceKm), poi)
+  const coordinates = waypoints.map((p) => [p.lng, p.lat])
   const response = await axios.post(
     '/api/route',
     { coordinates },
@@ -98,10 +127,76 @@ const fetchRealRoutePath = async (lat, lng, distanceKm) => {
   }
 }
 
-const buildSyntheticLoopPath = (lat, lng, distanceKm) =>
-  buildLoopPoints(lat, lng, distanceKm).map((p) => new window.kakao.maps.LatLng(p.lat, p.lng))
+const buildSyntheticLoopPath = (lat, lng, distanceKm, poi = null) =>
+  biasWaypointsToward(buildLoopPoints(lat, lng, distanceKm), poi).map(
+    (p) => new window.kakao.maps.LatLng(p.lat, p.lng),
+  )
 
-const renderMap = async (latitude, longitude, courseKm) => {
+// 국밥런 전용: 출발지 → 목적지 편도 경로. 실패 시 직선 폴백은 위 원형 코스 폴백과 같은 철학이다
+const fetchRealLinePath = async (lat, lng, poi) => {
+  const response = await axios.post(
+    '/api/route',
+    { coordinates: [[lng, lat], [poi.lng, poi.lat]] },
+    { timeout: 8000 },
+  )
+  const path = response.data?.path
+  if (!Array.isArray(path) || path.length < 2) {
+    throw new Error('경로 데이터 없음')
+  }
+  return {
+    path: path.map(([lng2, lat2]) => new window.kakao.maps.LatLng(lat2, lng2)),
+    ascent: response.data.ascent,
+    distanceMeters: response.data.distanceMeters,
+  }
+}
+
+const buildSyntheticLinePath = (lat, lng, poi) => [
+  new window.kakao.maps.LatLng(lat, lng),
+  new window.kakao.maps.LatLng(poi.lat, poi.lng),
+]
+
+const resolveRoutePath = async (lat, lng, courseKm, poi, isDestination) => {
+  try {
+    return isDestination
+      ? await fetchRealLinePath(lat, lng, poi)
+      : await fetchRealRoutePath(lat, lng, courseKm, poi)
+  } catch {
+    return {
+      path: isDestination
+        ? buildSyntheticLinePath(lat, lng, poi)
+        : buildSyntheticLoopPath(lat, lng, courseKm, poi),
+      ascent: null,
+      distanceMeters: null,
+    }
+  }
+}
+
+const searchNearbyPlace = (keyword, lat, lng) =>
+  new Promise((resolve) => {
+    if (!window.kakao?.maps?.services) {
+      resolve(null)
+      return
+    }
+    const places = new window.kakao.maps.services.Places()
+    places.keywordSearch(
+      keyword,
+      (data, searchStatus) => {
+        if (searchStatus === window.kakao.maps.services.Status.OK && data.length > 0) {
+          const place = data[0]
+          resolve({ name: place.place_name, lat: Number(place.y), lng: Number(place.x) })
+        } else {
+          resolve(null)
+        }
+      },
+      {
+        location: new window.kakao.maps.LatLng(lat, lng),
+        radius: 3000,
+        sort: window.kakao.maps.services.SortBy.DISTANCE,
+      },
+    )
+  })
+
+const renderMap = async (latitude, longitude, courseKm, poi = null, isDestination = false) => {
   routeAscent.value = null
   actualDistanceKm.value = null
   try {
@@ -112,29 +207,24 @@ const renderMap = async (latitude, longitude, courseKm) => {
     const map = new window.kakao.maps.Map(mapContainer.value, { center, level: 4 })
     new window.kakao.maps.Marker({ position: center, map })
 
-    if (courseKm) {
-      let path
-      try {
-        const result = await fetchRealRoutePath(latitude, longitude, courseKm)
-        path = result.path
-        routeAscent.value = result.ascent ?? null
-        actualDistanceKm.value = result.distanceMeters ? result.distanceMeters / 1000 : null
-      } catch {
-        path = buildSyntheticLoopPath(latitude, longitude, courseKm)
-        routeAscent.value = null
-        actualDistanceKm.value = null
-      }
+    if (courseKm || isDestination) {
+      const result = await resolveRoutePath(latitude, longitude, courseKm, poi, isDestination)
+      routeAscent.value = result.ascent ?? null
+      actualDistanceKm.value = result.distanceMeters ? result.distanceMeters / 1000 : null
       new window.kakao.maps.Polyline({
         map,
-        path,
+        path: result.path,
         strokeWeight: 4,
         strokeColor: '#27ae60',
         strokeOpacity: 0.9,
         strokeStyle: 'solid',
       })
       const bounds = new window.kakao.maps.LatLngBounds()
-      path.forEach((point) => bounds.extend(point))
+      result.path.forEach((point) => bounds.extend(point))
       map.setBounds(bounds)
+      if (isDestination && poi) {
+        new window.kakao.maps.Marker({ position: new window.kakao.maps.LatLng(poi.lat, poi.lng), map })
+      }
     }
   } catch (error) {
     console.error('🔴 카카오맵 로딩 실패:', error)
@@ -186,6 +276,29 @@ const pickRoute = (w) => {
   }
 }
 
+// 코스 타입 미선택(추천)이면 기존 날씨 기반 루프 그대로, 선택 시 해당 키워드로 주변 POI를 찾아 코스에 반영한다
+// 검색 결과가 없으면 조용히 추천 동작으로 폴백한다 (ORS 실패 시 합성 코스 폴백과 같은 철학)
+const applyCourseType = async (latitude, longitude) => {
+  coursePlace.value = null
+  const type = courseType.value
+  if (type === 'auto') {
+    renderMap(latitude, longitude, routeAdvice.value.distanceKm)
+    return
+  }
+  await loadKakaoMapSdk()
+  const place = await searchNearbyPlace(COURSE_KEYWORDS[type], latitude, longitude)
+  if (!place) {
+    renderMap(latitude, longitude, routeAdvice.value.distanceKm)
+    return
+  }
+  coursePlace.value = place
+  if (type === 'gukbap') {
+    renderMap(latitude, longitude, null, place, true)
+  } else {
+    renderMap(latitude, longitude, routeAdvice.value.distanceKm, place)
+  }
+}
+
 const fetchLocationWeather = () => {
   if (!navigator.geolocation) {
     status.value = 'unsupported'
@@ -212,7 +325,7 @@ const fetchLocationWeather = () => {
         }
         routeAdvice.value = pickRoute(weather.value)
         status.value = 'ready'
-        renderMap(latitude, longitude, routeAdvice.value.distanceKm)
+        applyCourseType(latitude, longitude)
       } catch (error) {
         console.error('🔴 위치 기반 날씨 조회 실패:', error)
         status.value = 'error'
@@ -231,6 +344,12 @@ onMounted(fetchLocationWeather)
   <el-card class="running-route-card" shadow="hover">
     <template #header>📍 내 주변 러닝 코스 추천</template>
 
+    <el-radio-group v-model="courseType" size="small" class="course-type-row" @change="fetchLocationWeather">
+      <el-radio-button v-for="opt in courseTypeOptions" :key="opt.value" :label="opt.value">
+        {{ opt.label }}
+      </el-radio-button>
+    </el-radio-group>
+
     <p v-if="status === 'loading'">현재 위치를 확인하는 중입니다...</p>
     <p v-else-if="status === 'denied'">위치 권한을 허용하면 주변 날씨에 맞는 코스를 추천해드려요.</p>
     <p v-else-if="status === 'unsupported' || status === 'error'">위치 기반 추천을 사용할 수 없습니다.</p>
@@ -238,10 +357,17 @@ onMounted(fetchLocationWeather)
       <div ref="mapContainer" class="route-map"></div>
       <p class="route-location">
         {{ locationName }} · {{ weather.temp }}°C · {{ friendlyStatus(weather.status) }} ·
-        <strong>{{ routeAdvice.distance }}</strong>
-        <span v-if="actualDistanceKm">(실제 약 {{ actualDistanceKm.toFixed(1) }}km)</span>
+        <strong>{{ courseType === 'gukbap' && coursePlace ? '국밥런' : routeAdvice.distance }}</strong>
+        <span v-if="actualDistanceKm && courseType !== 'gukbap'">(실제 약 {{ actualDistanceKm.toFixed(1) }}km)</span>
       </p>
-      <p class="route-tip">{{ routeAdvice.tip }} {{ clothingTip(weather.temp) }}</p>
+      <p v-if="courseType === 'gukbap' && coursePlace" class="route-tip">
+        {{ coursePlace.name }}까지 약 {{ actualDistanceKm ? actualDistanceKm.toFixed(1) : '?' }}km, 든든하게 채우고
+        다녀오세요.
+      </p>
+      <p v-else class="route-tip">
+        {{ routeAdvice.tip }} {{ clothingTip(weather.temp) }}
+        <span v-if="coursePlace">· {{ coursePlace.name }} 경유</span>
+      </p>
 
       <div class="route-stats-grid">
         <div class="route-stat">
@@ -277,6 +403,16 @@ onMounted(fetchLocationWeather)
   --el-card-bg-color: var(--ex-card-bg, #fff);
   --el-card-padding: 12px;
   color: var(--ex-text, #2c3e50);
+}
+.course-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.course-type-row :deep(.el-radio-button__inner) {
+  padding: 4px 8px;
+  font-size: var(--ex-font-xs, 0.75rem);
 }
 .route-map {
   width: 100%;
