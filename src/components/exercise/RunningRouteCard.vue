@@ -10,12 +10,26 @@ const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather'
 const KAKAO_MAP_KEY = import.meta.env.VITE_MOVIE_API_KEY
 
+const WEIGHT_KEY = 'running-weight-kg'
+const CALORIES_PER_KG_PER_KM = 1.0
+
 const locationName = ref('')
 const weather = ref(null)
 const routeAdvice = ref(null)
 const status = ref('idle')
 const mapContainer = ref(null)
 const coords = ref(null)
+const routeAscent = ref(null)
+const weightKg = ref(Number(localStorage.getItem(WEIGHT_KEY)) || 65)
+
+const saveWeight = () => {
+  localStorage.setItem(WEIGHT_KEY, String(weightKg.value))
+}
+
+const caloriesEstimate = computed(() => {
+  if (!routeAdvice.value?.distanceKm) return null
+  return Math.round(routeAdvice.value.distanceKm * weightKg.value * CALORIES_PER_KG_PER_KM)
+})
 
 const formatHourMinute = (unixSeconds) =>
   new Date(unixSeconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -80,13 +94,17 @@ const fetchRealRoutePath = async (lat, lng, distanceKm) => {
   if (!Array.isArray(path) || path.length < 2) {
     throw new Error('경로 데이터 없음')
   }
-  return path.map(([lng2, lat2]) => new window.kakao.maps.LatLng(lat2, lng2))
+  return {
+    path: path.map(([lng2, lat2]) => new window.kakao.maps.LatLng(lat2, lng2)),
+    ascent: response.data.ascent,
+  }
 }
 
 const buildSyntheticLoopPath = (lat, lng, distanceKm) =>
   buildLoopPoints(lat, lng, distanceKm).map((p) => new window.kakao.maps.LatLng(p.lat, p.lng))
 
 const renderMap = async (latitude, longitude, courseKm) => {
+  routeAscent.value = null
   try {
     await loadKakaoMapSdk()
     await nextTick()
@@ -98,9 +116,12 @@ const renderMap = async (latitude, longitude, courseKm) => {
     if (courseKm) {
       let path
       try {
-        path = await fetchRealRoutePath(latitude, longitude, courseKm)
+        const result = await fetchRealRoutePath(latitude, longitude, courseKm)
+        path = result.path
+        routeAscent.value = result.ascent ?? null
       } catch {
         path = buildSyntheticLoopPath(latitude, longitude, courseKm)
+        routeAscent.value = null
       }
       new window.kakao.maps.Polyline({
         map,
@@ -218,7 +239,36 @@ onMounted(fetchLocationWeather)
       <p class="route-distance">{{ routeAdvice.distance }}</p>
       <p class="route-tip">{{ routeAdvice.tip }}</p>
       <p class="route-clothing">{{ clothingTip(weather.temp) }}</p>
-      <p class="route-sun">🌅 일출 {{ weather.sunrise }} · 🌇 일몰 {{ weather.sunset }} — 너무 이르거나 늦은 시간은 피해주세요.</p>
+
+      <div class="route-stats-grid">
+        <div class="route-stat">
+          <span class="stat-icon">🌅</span>
+          <span class="stat-label">일출</span>
+          <span class="stat-value">{{ weather.sunrise }}</span>
+        </div>
+        <div class="route-stat">
+          <span class="stat-icon">🌇</span>
+          <span class="stat-label">일몰</span>
+          <span class="stat-value">{{ weather.sunset }}</span>
+        </div>
+        <div class="route-stat">
+          <span class="stat-icon">⛰️</span>
+          <span class="stat-label">업힐</span>
+          <span class="stat-value">{{ routeAscent !== null ? `${Math.round(routeAscent)}m` : '정보 없음' }}</span>
+        </div>
+        <div class="route-stat">
+          <span class="stat-icon">🔥</span>
+          <span class="stat-label">예상 칼로리</span>
+          <span class="stat-value">{{ caloriesEstimate !== null ? `${caloriesEstimate}kcal` : '-' }}</span>
+        </div>
+      </div>
+
+      <label class="route-weight">
+        체중
+        <input v-model.number="weightKg" type="number" min="30" max="200" @change="saveWeight" />
+        kg 기준 추정치
+      </label>
+
       <a v-if="kakaoMapLink" :href="kakaoMapLink" target="_blank" rel="noopener" class="route-map-link">
         카카오맵 앱에서 보기 ↗
       </a>
@@ -256,11 +306,54 @@ onMounted(fetchLocationWeather)
   color: var(--ex-text-soft, #7f8c8d);
   margin-bottom: 12px;
 }
-.route-clothing,
-.route-sun {
+.route-clothing {
   font-size: var(--ex-font-sm, 0.875rem);
   color: var(--ex-text-soft, #7f8c8d);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+}
+.route-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.route-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--ex-input-bg, #f1f2f6);
+  border-radius: 8px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.stat-icon {
+  font-size: 1.1rem;
+}
+.stat-label {
+  font-size: var(--ex-font-xs, 0.75rem);
+  color: var(--ex-text-soft, #7f8c8d);
+}
+.stat-value {
+  font-weight: bold;
+  font-size: var(--ex-font-sm, 0.875rem);
+  color: var(--ex-text, #2c3e50);
+}
+.route-weight {
+  display: block;
+  font-size: var(--ex-font-xs, 0.75rem);
+  color: var(--ex-text-soft, #7f8c8d);
+  margin-bottom: 12px;
+}
+.route-weight input {
+  width: 56px;
+  margin: 0 4px;
+  padding: 2px 4px;
+  font-size: var(--ex-font-xs, 0.75rem);
+  border: 1px solid var(--ex-border, #e9ecef);
+  border-radius: 4px;
+  background: var(--ex-card-bg, #fff);
+  color: var(--ex-text, #2c3e50);
 }
 .route-map-link {
   display: inline-block;

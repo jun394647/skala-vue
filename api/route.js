@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         Authorization: apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ coordinates }),
+      body: JSON.stringify({ coordinates, elevation: true }),
     })
 
     if (!orsResponse.ok) {
@@ -35,14 +35,19 @@ export default async function handler(req, res) {
     }
 
     const geojson = await orsResponse.json()
-    const path = geojson?.features?.[0]?.geometry?.coordinates
+    const feature = geojson?.features?.[0]
+    const path = feature?.geometry?.coordinates
 
     if (!Array.isArray(path) || path.length < 2) {
       res.status(502).json({ error: 'ORS 응답에 경로 정보가 없습니다.' })
       return
     }
 
-    res.status(200).json({ path })
+    res.status(200).json({
+      path,
+      ascent: feature.properties?.ascent ?? null,
+      descent: feature.properties?.descent ?? null,
+    })
   } catch (error) {
     res.status(500).json({ error: `경로 조회 중 오류: ${error.message}` })
   }
