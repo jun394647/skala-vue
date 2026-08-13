@@ -425,6 +425,7 @@ onMounted(fetchWeather)
   --font-scale: 1;
   min-height: 100vh;
   width: 100%;
+  overflow-x: hidden;
   padding: 24px clamp(16px, 4vw, 56px) 60px;
   background: radial-gradient(circle at 20% 0%, #1b2b45 0%, #0c1526 55%, #08101c 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
@@ -443,14 +444,19 @@ onMounted(fetchWeather)
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
 
+.dashboard-main,
+.dashboard-side {
+  min-width: 0;
+}
+
 @media (min-width: 900px) {
   .dashboard-grid {
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   }
 
   .crop-list {
@@ -891,6 +897,7 @@ onMounted(fetchWeather)
 .crop-card-head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 8px;
 }
@@ -904,6 +911,8 @@ onMounted(fetchWeather)
   font-weight: 700;
   color: #f3f6fa;
   flex: 1;
+  min-width: 80px;
+  overflow-wrap: break-word;
 }
 
 .crop-badge {
