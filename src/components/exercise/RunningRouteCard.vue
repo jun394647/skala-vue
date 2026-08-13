@@ -26,12 +26,15 @@ const courseType = ref('auto')
 const coursePlace = ref(null)
 const courseTypeOptions = [
   { value: 'auto', label: '추천' },
+  { value: 'weather', label: '날씨 코스' },
   { value: 'view', label: '뷰 좋은 코스' },
   { value: 'park', label: '공원 코스' },
   { value: 'city', label: '시티런' },
   { value: 'gukbap', label: '국밥런' },
 ]
-const COURSE_KEYWORDS = { view: '전망대', park: '공원', city: '지하철역', gukbap: '국밥' }
+// 뷰 좋은 코스 / 날씨 코스(맑음)가 공유하는 "가볼만한" 우선순위 — 바다·해변은 내륙에선 대부분 검색 실패하고 자연히 하위 키워드로 폴백된다
+const SCENIC_KEYWORDS = ['바다', '해변', '한강공원', '전망대', '공원']
+const COURSE_KEYWORDS = { view: SCENIC_KEYWORDS, park: ['공원'], city: ['지하철역'], gukbap: ['국밥'] }
 
 const caloriesEstimate = computed(() => {
   const distanceKm = actualDistanceKm.value ?? routeAdvice.value?.distanceKm
@@ -70,14 +73,21 @@ const loadKakaoMapSdk = () => {
 
 const EARTH_RADIUS_M = 6371000
 
-const buildLoopPoints = (lat, lng, distanceKm) => {
+// 방위각(정북=0, 시계방향 라디안)만큼 (dx,dy)를 원점(출발지) 기준으로 회전 — 원점을 지나는 원이므로
+// 이렇게 회전해야 출발지가 그대로 고정된 채 원이 통째로 목표 방향으로 돌아간다 (각도 값 자체를 밀면 출발점이 어긋난다)
+const rotateAroundOrigin = (dx, dy, bearingRad) => ({
+  dx: dx * Math.cos(bearingRad) + dy * Math.sin(bearingRad),
+  dy: -dx * Math.sin(bearingRad) + dy * Math.cos(bearingRad),
+})
+
+// bearingRad=0(기본)이면 항상 정북으로 부푸는 기존 원형 코스와 완전히 동일한 좌표를 낸다 (auto/미검색 경로 불변 보장)
+const buildLoopPoints = (lat, lng, distanceKm, bearingRad = 0) => {
   const radiusM = (distanceKm * 1000) / (2 * Math.PI)
   const steps = 32
   const points = []
   for (let i = 0; i <= steps; i++) {
     const angle = (i / steps) * 2 * Math.PI
-    const dx = radiusM * Math.sin(angle)
-    const dy = radiusM * (1 - Math.cos(angle))
+    const { dx, dy } = rotateAroundOrigin(radiusM * Math.sin(angle), radiusM * (1 - Math.cos(angle)), bearingRad)
     const dLat = (dy / EARTH_RADIUS_M) * (180 / Math.PI)
     const dLng = (dx / (EARTH_RADIUS_M * Math.cos((lat * Math.PI) / 180))) * (180 / Math.PI)
     points.push({ lat: lat + dLat, lng: lng + dLng })
@@ -85,8 +95,8 @@ const buildLoopPoints = (lat, lng, distanceKm) => {
   return points
 }
 
-const buildLoopWaypoints = (lat, lng, distanceKm, count = 6) => {
-  const loop = buildLoopPoints(lat, lng, distanceKm)
+const buildLoopWaypoints = (lat, lng, distanceKm, bearingRad = 0, count = 6) => {
+  const loop = buildLoopPoints(lat, lng, distanceKm, bearingRad)
   const step = Math.max(1, Math.floor((loop.length - 1) / count))
   const waypoints = []
   for (let i = 0; i < loop.length - 1; i += step) {
@@ -96,26 +106,25 @@ const buildLoopWaypoints = (lat, lng, distanceKm, count = 6) => {
   return waypoints
 }
 
-// 코스 타입(공원/뷰/시티런) 선택 시 루프 웨이포인트 중 POI와 가장 가까운 지점을 POI 좌표로 치환해 그쪽을 지나가게 유도한다
-const biasWaypointsToward = (points, poi) => {
-  if (!poi) return points
-  let closestIndex = 0
-  let closestDistSq = Infinity
-  points.forEach((p, i) => {
-    const distSq = (p.lat - poi.lat) ** 2 + (p.lng - poi.lng) ** 2
-    if (distSq < closestDistSq) {
-      closestDistSq = distSq
-      closestIndex = i
-    }
-  })
-  const biased = [...points]
-  biased[closestIndex] = { lat: poi.lat, lng: poi.lng }
-  return biased
+const toRad = (deg) => (deg * Math.PI) / 180
+
+// 출발지 → POI 초기 방위각(대권 방위각 공식). 루프를 이 방향으로 기울이는 데만 쓰고, POI 좌표 자체는 경로에 섞지 않는다
+const bearingTo = (lat1, lng1, lat2, lng2) => {
+  const phi1 = toRad(lat1)
+  const phi2 = toRad(lat2)
+  const deltaLng = toRad(lng2 - lng1)
+  const bearing = Math.atan2(
+    Math.sin(deltaLng) * Math.cos(phi2),
+    Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLng),
+  )
+  return (bearing + 2 * Math.PI) % (2 * Math.PI)
 }
+
+const bearingToPoi = (lat, lng, poi) => (poi ? bearingTo(lat, lng, poi.lat, poi.lng) : 0)
 
 // ORS는 실도로 경로용 서버 프록시(api/route.js) — GitHub Pages엔 서버가 없어 404가 정상이며, 이 경우 합성 원형 코스로 조용히 폴백한다
 const fetchRealRoutePath = async (lat, lng, distanceKm, poi = null) => {
-  const waypoints = biasWaypointsToward(buildLoopWaypoints(lat, lng, distanceKm), poi)
+  const waypoints = buildLoopWaypoints(lat, lng, distanceKm, bearingToPoi(lat, lng, poi))
   const coordinates = waypoints.map((p) => [p.lng, p.lat])
   const response = await axios.post(
     '/api/route',
@@ -134,7 +143,7 @@ const fetchRealRoutePath = async (lat, lng, distanceKm, poi = null) => {
 }
 
 const buildSyntheticLoopPath = (lat, lng, distanceKm, poi = null) =>
-  biasWaypointsToward(buildLoopPoints(lat, lng, distanceKm), poi).map(
+  buildLoopPoints(lat, lng, distanceKm, bearingToPoi(lat, lng, poi)).map(
     (p) => new window.kakao.maps.LatLng(p.lat, p.lng),
   )
 
@@ -201,6 +210,15 @@ const searchNearbyPlace = (keyword, lat, lng) =>
       },
     )
   })
+
+// 키워드를 우선순위대로 순차 검색해 첫 성공 결과를 쓴다 (뷰 좋은 코스 / 날씨 코스가 공유)
+const searchNearbyPlaceByPriority = async (keywords, lat, lng) => {
+  for (const keyword of keywords) {
+    const place = await searchNearbyPlace(keyword, lat, lng)
+    if (place) return place
+  }
+  return null
+}
 
 const renderMap = async (latitude, longitude, courseKm, poi = null, isDestination = false) => {
   routeAscent.value = null
@@ -282,7 +300,16 @@ const pickRoute = (w) => {
   }
 }
 
-// 코스 타입 미선택(추천)이면 기존 날씨 기반 루프 그대로, 선택 시 해당 키워드로 주변 POI를 찾아 코스에 반영한다
+// 날씨 코스: 비는 기존 실내 대체 로직에 맡기고 POI를 만들지 않는다. 더위는 그늘이 있는 공원, 추위/강풍은 "바람 막아주는 POI"라는
+// 신뢰할 만한 검색 개념이 없어 억지로 만들지 않고 기본 루프, 그 외 맑고 무난한 날엔 뷰 좋은 코스와 같은 경관 우선순위를 탄다
+const pickWeatherKeywords = (w) => {
+  if (w.rainVolume > 0) return null
+  if (w.temp >= 28) return ['공원']
+  if (w.temp <= 3 || w.windSpeed >= 8) return null
+  return SCENIC_KEYWORDS
+}
+
+// 코스 타입 미선택(추천)이면 기존 날씨 기반 루프 그대로, 선택 시 해당 키워드(우선순위 리스트)로 주변 POI를 찾아 코스에 반영한다
 // 검색 결과가 없으면 조용히 추천 동작으로 폴백한다 (ORS 실패 시 합성 코스 폴백과 같은 철학)
 const applyCourseType = async (latitude, longitude) => {
   coursePlace.value = null
@@ -292,7 +319,8 @@ const applyCourseType = async (latitude, longitude) => {
     return
   }
   await loadKakaoMapSdk()
-  const place = await searchNearbyPlace(COURSE_KEYWORDS[type], latitude, longitude)
+  const keywords = type === 'weather' ? pickWeatherKeywords(weather.value) : COURSE_KEYWORDS[type]
+  const place = keywords ? await searchNearbyPlaceByPriority(keywords, latitude, longitude) : null
   if (!place) {
     renderMap(latitude, longitude, routeAdvice.value.distanceKm)
     return
