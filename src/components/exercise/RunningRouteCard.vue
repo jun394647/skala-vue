@@ -85,6 +85,8 @@ onMounted(fetchLocationWeather)
 <style scoped>
 .running-route-card {
   margin-bottom: 15px;
+  --el-card-bg-color: var(--ex-card-bg, #fff);
+  color: var(--ex-text, #2c3e50);
 }
 .route-location {
   font-weight: bold;

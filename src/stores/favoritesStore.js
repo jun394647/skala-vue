@@ -19,10 +19,15 @@ export const useFavoritesStore = defineStore('favorites', () => {
     }
   }
 
+  function clearFavorites() {
+    favoriteIds.value = []
+  }
+
   return {
     favoriteIds,
     favoriteCount,
     isFavorite,
     toggleFavorite,
+    clearFavorites,
   }
 })

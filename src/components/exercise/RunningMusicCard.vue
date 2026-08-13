@@ -81,6 +81,8 @@ watch(() => props.weatherList, fetchRunningMusic, { immediate: true })
 <style scoped>
 .running-music-card {
   margin-bottom: 15px;
+  --el-card-bg-color: var(--ex-card-bg, #fff);
+  color: var(--ex-text, #2c3e50);
 }
 .music-embed {
   width: 100%;

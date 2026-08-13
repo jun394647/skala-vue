@@ -1,7 +1,7 @@
 <script setup>
 // 과제 ⑥: Axios 실시간 API 연동 — Promise.all 병렬 요청, isLoading/에러 처리
 // (컴포넌트는 과제 ③, 라우팅은 과제 ④, 단위 전환은 과제 ⑤ 것을 그대로 재사용)
-// 즐겨찾기·러닝 한마디·러닝 음악 추천은 가이드 범위를 넘어선 추가 기능
+// 즐겨찾기는 가이드 범위를 넘어선 추가 기능
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
@@ -9,8 +9,6 @@ import axios from 'axios'
 import BaseDashboardCard from '../components/exercise/BaseDashboardCard.vue'
 import SearchBar from '../components/exercise/SearchBar.vue'
 import WeatherCard from '../components/exercise/WeatherCard.vue'
-import RunningMusicCard from '../components/exercise/RunningMusicCard.vue'
-import RunningRouteCard from '../components/exercise/RunningRouteCard.vue'
 import { useFavoritesStore } from '../stores/favoritesStore'
 
 const router = useRouter()
@@ -22,25 +20,9 @@ const searchQuery = ref('')
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 const isLoading = ref(false)
 const showFavoritesOnly = ref(false)
-const runningQuote = ref('')
-const isQuoteLoading = ref(false)
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
-const ADVICE_URL = 'https://api.adviceslip.com/advice'
-
-const fetchRunningQuote = async () => {
-  isQuoteLoading.value = true
-  try {
-    const response = await axios.get(ADVICE_URL)
-    runningQuote.value = response.data.slip.advice
-  } catch (error) {
-    console.error('🔴 러닝 한마디 로딩 실패:', error)
-    runningQuote.value = '오늘도 가볍게 한 걸음부터 시작해봐요.'
-  } finally {
-    isQuoteLoading.value = false
-  }
-}
 
 const fetchRealTimeWeather = async () => {
   isLoading.value = true
@@ -84,7 +66,6 @@ onMounted(() => {
     searchQuery.value = route.query.search
   }
   fetchRealTimeWeather()
-  fetchRunningQuote()
 })
 
 watch(searchQuery, (newQuery) => {
@@ -108,18 +89,6 @@ const handleDetailJump = (id) => {
 
 <template>
   <div class="dashboard-wrapper">
-    <el-card class="running-quote-card" shadow="hover">
-      <template #header>🏃 오늘의 러닝 한마디</template>
-      <p class="running-quote-text">{{ isQuoteLoading ? '문장을 불러오는 중입니다...' : runningQuote }}</p>
-      <el-button type="success" size="small" :loading="isQuoteLoading" @click="fetchRunningQuote">
-        다른 문장 보기
-      </el-button>
-    </el-card>
-
-    <RunningRouteCard />
-
-    <RunningMusicCard :weather-list="weatherList" />
-
     <BaseDashboardCard>
       <SearchBar :current-query="searchQuery" @update-query="(val) => (searchQuery = val)" />
     </BaseDashboardCard>
@@ -161,18 +130,6 @@ const handleDetailJump = (id) => {
 </template>
 
 <style scoped>
-.running-quote-card {
-  margin-bottom: 15px;
-}
-.running-quote-text {
-  margin: 0 0 12px;
-  font-family: Georgia, 'Noto Serif KR', serif;
-  font-style: italic;
-  font-size: 1.15rem;
-  line-height: 1.5;
-  letter-spacing: -0.2px;
-  color: var(--ex-text, #2c3e50);
-}
 .favorite-filter {
   display: block;
   margin-bottom: 12px;

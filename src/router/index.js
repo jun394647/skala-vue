@@ -18,6 +18,17 @@ const routes = [
     name: 'WeatherDetail',
     component: () => import('../views/WeatherDetailView.vue'),
   },
+  // 가이드 범위를 넘어선 추가 기능 — 러닝 대시보드 / 설정 페이지 라우트
+  {
+    path: '/running',
+    name: 'RunningDashboard',
+    component: () => import('../views/RunningDashboardView.vue'),
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: () => import('../views/SettingsView.vue'),
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
