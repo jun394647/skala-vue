@@ -91,7 +91,7 @@ watch(() => props.weatherList, fetchRunningMusic, { immediate: true })
 }
 .music-title {
   margin: 8px 0 0;
-  font-size: 14px;
+  font-size: var(--ex-font-sm, 14px);
   color: var(--ex-text, #2c3e50);
 }
 </style>

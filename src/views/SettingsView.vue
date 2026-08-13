@@ -65,7 +65,7 @@ const favoritesStore = useFavoritesStore()
   color: var(--ex-text, #2c3e50);
 }
 .setting-desc {
-  font-size: 13px;
+  font-size: var(--ex-font-xs, 12px);
   color: var(--ex-text-soft, #7f8c8d);
 }
 .theme-toggle-btn,
@@ -76,6 +76,7 @@ const favoritesStore = useFavoritesStore()
   color: var(--ex-text, #2c3e50);
   border-radius: 999px;
   padding: 8px 16px;
+  font-size: var(--ex-font-sm, 14px);
   font-weight: bold;
   cursor: pointer;
 }

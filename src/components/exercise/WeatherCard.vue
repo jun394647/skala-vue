@@ -57,7 +57,7 @@ const displayTemp = computed(() => {
 .badge {
   display: inline-block;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: var(--ex-font-xs, 12px);
   border-radius: 4px;
   color: #fff;
 }
@@ -72,6 +72,7 @@ const displayTemp = computed(() => {
   right: 12px;
   top: 15px;
   padding: 6px 10px;
+  font-size: var(--ex-font-sm, 14px);
   cursor: pointer;
 }
 .card-head {

@@ -20,6 +20,7 @@ const configStore = useConfigStore()
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: var(--ex-font-sm, 14px);
   font-weight: bold;
 }
 </style>

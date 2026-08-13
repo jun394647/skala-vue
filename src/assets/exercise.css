@@ -6,6 +6,15 @@
   --ex-border: #e9ecef;
   --ex-nav-bg: #ffffff;
   --ex-input-bg: #f8f9fa;
+
+  --ex-font-family:
+    'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --ex-font-xs: 0.75rem;
+  --ex-font-sm: 0.875rem;
+  --ex-font-base: 1rem;
+  --ex-font-md: 1.0625rem;
+  --ex-font-lg: 1.25rem;
+  --ex-font-xl: 1.5rem;
 }
 
 html.dark {
@@ -18,53 +27,27 @@ html.dark {
   --ex-input-bg: #1c222c;
 }
 
-body:has(.app-container) {
+body:has(.dashboard-wrapper) {
   background-color: var(--ex-page-bg);
   transition: background-color 0.2s ease;
 }
 
-.app-container {
-  max-width: 900px;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 40px auto;
-  padding: 30px clamp(16px, 5vw, 40px);
-  background-color: var(--ex-card-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  font-family:
-    'Pretendard',
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    Roboto,
-    sans-serif;
-  color: var(--ex-text);
-}
-.app-container h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--ex-text);
-  margin-top: 48px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.app-container h1:first-of-type {
-  margin-top: 0;
-}
-.app-container hr {
+.dashboard-wrapper hr {
   border: none;
   border-top: 2px solid var(--ex-border);
   margin-bottom: 24px;
 }
-h1 {
-  font-size: 1.8rem;
+.dashboard-wrapper h3 {
+  font-size: var(--ex-font-lg);
   font-weight: 700;
-  color: var(--ex-text);
-  margin-top: 40px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+.dashboard-wrapper h4 {
+  font-size: var(--ex-font-md);
+  font-weight: 600;
+}
+.dashboard-wrapper p {
+  font-size: var(--ex-font-base);
 }
 
 .navigation-bar {
@@ -81,7 +64,7 @@ h1 {
   text-decoration: none;
   color: var(--ex-text-soft);
   font-weight: bold;
-  font-size: 16px;
+  font-size: var(--ex-font-sm);
   transition: color 0.2s ease;
 }
 .nav-item:hover {
@@ -103,6 +86,9 @@ h1 {
   max-width: 600px;
   box-sizing: border-box;
   margin: 0 auto;
+  font-family: var(--ex-font-family);
+  font-size: var(--ex-font-base);
+  color: var(--ex-text);
 }
 .search-box,
 .list-box {
@@ -117,46 +103,9 @@ input[type='text'] {
   box-sizing: border-box;
   padding: 8px;
   width: 90%;
-  font-size: 14px;
+  font-size: var(--ex-font-sm);
   background: var(--ex-card-bg);
   color: var(--ex-text);
   border: 1px solid var(--ex-border);
   border-radius: 4px;
-}
-.weather-card {
-  background: #fff;
-  border: 1px solid #dee2e6;
-  padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-}
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  color: #fff;
-}
-.hot {
-  background-color: #ff7675;
-}
-.cool {
-  background-color: #74b9ff;
-}
-.btn-detail {
-  position: absolute;
-  right: 12px;
-  top: 15px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.status-bar {
-  background: #e8f5e9;
-  padding: 10px;
-  text-align: center;
-  color: #2e7d32;
-  font-weight: bold;
-  border-radius: 6px;
 }

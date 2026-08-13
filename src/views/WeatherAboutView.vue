@@ -33,7 +33,7 @@ const handleGoHome = () => {
   padding: 12px;
   border-radius: 6px;
   line-height: 1.5;
-  font-size: 14px;
+  font-size: var(--ex-font-sm, 14px);
 }
 
 ul {
@@ -61,6 +61,7 @@ code {
   color: white;
   border: none;
   border-radius: 4px;
+  font-size: var(--ex-font-sm, 14px);
   font-weight: bold;
   cursor: pointer;
 }

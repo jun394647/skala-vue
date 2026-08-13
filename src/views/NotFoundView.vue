@@ -28,7 +28,6 @@ const goHome = () => {
   align-items: center;
   min-height: 80vh;
   background-color: var(--ex-page-bg, #f8f9fa);
-  font-family: 'Noto Sans KR', sans-serif;
 }
 
 .not-found-content {
@@ -46,7 +45,7 @@ const goHome = () => {
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: var(--ex-font-xl, 1.5rem);
   font-weight: 700;
   color: var(--ex-text, #343a40);
   margin-bottom: 15px;
@@ -54,8 +53,8 @@ h2 {
 }
 
 p {
-  font-size: 1.1rem;
-  color: #6c757d;
+  font-size: var(--ex-font-base, 1rem);
+  color: var(--ex-text-soft, #6c757d);
   line-height: 1.6;
   margin-bottom: 35px;
 }
@@ -65,7 +64,7 @@ p {
   color: white;
   border: none;
   padding: 12px 30px;
-  font-size: 1.1rem;
+  font-size: var(--ex-font-sm, 0.875rem);
   font-weight: 500;
   border-radius: 30px;
   cursor: pointer;

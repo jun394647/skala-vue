@@ -94,7 +94,7 @@ onMounted(fetchLocationWeather)
   color: var(--ex-text, #2c3e50);
 }
 .route-distance {
-  font-size: 1.2rem;
+  font-size: var(--ex-font-lg, 1.25rem);
   font-weight: bold;
   color: #27ae60;
   margin-bottom: 6px;
