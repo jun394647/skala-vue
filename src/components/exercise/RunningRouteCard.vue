@@ -73,21 +73,14 @@ const loadKakaoMapSdk = () => {
 
 const EARTH_RADIUS_M = 6371000
 
-// 방위각(정북=0, 시계방향 라디안)만큼 (dx,dy)를 원점(출발지) 기준으로 회전 — 원점을 지나는 원이므로
-// 이렇게 회전해야 출발지가 그대로 고정된 채 원이 통째로 목표 방향으로 돌아간다 (각도 값 자체를 밀면 출발점이 어긋난다)
-const rotateAroundOrigin = (dx, dy, bearingRad) => ({
-  dx: dx * Math.cos(bearingRad) + dy * Math.sin(bearingRad),
-  dy: -dx * Math.sin(bearingRad) + dy * Math.cos(bearingRad),
-})
-
-// bearingRad=0(기본)이면 항상 정북으로 부푸는 기존 원형 코스와 완전히 동일한 좌표를 낸다 (auto/미검색 경로 불변 보장)
-const buildLoopPoints = (lat, lng, distanceKm, bearingRad = 0) => {
+const buildLoopPoints = (lat, lng, distanceKm) => {
   const radiusM = (distanceKm * 1000) / (2 * Math.PI)
   const steps = 32
   const points = []
   for (let i = 0; i <= steps; i++) {
     const angle = (i / steps) * 2 * Math.PI
-    const { dx, dy } = rotateAroundOrigin(radiusM * Math.sin(angle), radiusM * (1 - Math.cos(angle)), bearingRad)
+    const dx = radiusM * Math.sin(angle)
+    const dy = radiusM * (1 - Math.cos(angle))
     const dLat = (dy / EARTH_RADIUS_M) * (180 / Math.PI)
     const dLng = (dx / (EARTH_RADIUS_M * Math.cos((lat * Math.PI) / 180))) * (180 / Math.PI)
     points.push({ lat: lat + dLat, lng: lng + dLng })
@@ -95,36 +88,45 @@ const buildLoopPoints = (lat, lng, distanceKm, bearingRad = 0) => {
   return points
 }
 
-const buildLoopWaypoints = (lat, lng, distanceKm, bearingRad = 0, count = 6) => {
-  const loop = buildLoopPoints(lat, lng, distanceKm, bearingRad)
+// POI를 웨이포인트 중 가장 가까운 지점에 그대로 대입해 코스가 실제로 그 장소를 지나가게 한다.
+// searchNearbyPlace를 loopSearchRadius로 좁혀 부르기 때문에 POI가 루프 반경을 크게 벗어나 스파이크가 생기지 않는다.
+const biasWaypointsToward = (points, poi) => {
+  if (!poi) return points
+  let closestIndex = 0
+  let closestDistSq = Infinity
+  points.forEach((p, i) => {
+    const distSq = (p.lat - poi.lat) ** 2 + (p.lng - poi.lng) ** 2
+    if (distSq < closestDistSq) {
+      closestDistSq = distSq
+      closestIndex = i
+    }
+  })
+  const biased = [...points]
+  biased[closestIndex] = { lat: poi.lat, lng: poi.lng }
+  return biased
+}
+
+const buildLoopWaypoints = (lat, lng, distanceKm, poi = null, count = 6) => {
+  const loop = buildLoopPoints(lat, lng, distanceKm)
   const step = Math.max(1, Math.floor((loop.length - 1) / count))
   const waypoints = []
   for (let i = 0; i < loop.length - 1; i += step) {
     waypoints.push(loop[i])
   }
   waypoints.push(loop[0])
-  return waypoints
+  return biasWaypointsToward(waypoints, poi)
 }
 
-const toRad = (deg) => (deg * Math.PI) / 180
-
-// 출발지 → POI 초기 방위각(대권 방위각 공식). 루프를 이 방향으로 기울이는 데만 쓰고, POI 좌표 자체는 경로에 섞지 않는다
-const bearingTo = (lat1, lng1, lat2, lng2) => {
-  const phi1 = toRad(lat1)
-  const phi2 = toRad(lat2)
-  const deltaLng = toRad(lng2 - lng1)
-  const bearing = Math.atan2(
-    Math.sin(deltaLng) * Math.cos(phi2),
-    Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLng),
-  )
-  return (bearing + 2 * Math.PI) % (2 * Math.PI)
+// 루프형 코스(뷰/공원/시티런/날씨)는 검색 반경을 목표 거리의 루프 크기에 비례하게 좁혀서,
+// 찾은 장소가 실제로 코스가 지나갈 수 있는 거리 안에 있도록 보장한다 (너무 멀면 웨이포인트가 튀어나가 버린다)
+const loopSearchRadius = (distanceKm) => {
+  const radiusM = (distanceKm * 1000) / (2 * Math.PI)
+  return Math.min(Math.max(radiusM * 1.3, 500), 1500)
 }
-
-const bearingToPoi = (lat, lng, poi) => (poi ? bearingTo(lat, lng, poi.lat, poi.lng) : 0)
 
 // ORS는 실도로 경로용 서버 프록시(api/route.js) — GitHub Pages엔 서버가 없어 404가 정상이며, 이 경우 합성 원형 코스로 조용히 폴백한다
 const fetchRealRoutePath = async (lat, lng, distanceKm, poi = null) => {
-  const waypoints = buildLoopWaypoints(lat, lng, distanceKm, bearingToPoi(lat, lng, poi))
+  const waypoints = buildLoopWaypoints(lat, lng, distanceKm, poi)
   const coordinates = waypoints.map((p) => [p.lng, p.lat])
   const response = await axios.post(
     '/api/route',
@@ -143,7 +145,7 @@ const fetchRealRoutePath = async (lat, lng, distanceKm, poi = null) => {
 }
 
 const buildSyntheticLoopPath = (lat, lng, distanceKm, poi = null) =>
-  buildLoopPoints(lat, lng, distanceKm, bearingToPoi(lat, lng, poi)).map(
+  biasWaypointsToward(buildLoopPoints(lat, lng, distanceKm), poi).map(
     (p) => new window.kakao.maps.LatLng(p.lat, p.lng),
   )
 
@@ -186,7 +188,7 @@ const resolveRoutePath = async (lat, lng, courseKm, poi, isDestination) => {
   }
 }
 
-const searchNearbyPlace = (keyword, lat, lng) =>
+const searchNearbyPlace = (keyword, lat, lng, radius) =>
   new Promise((resolve) => {
     if (!window.kakao?.maps?.services) {
       resolve(null)
@@ -205,16 +207,16 @@ const searchNearbyPlace = (keyword, lat, lng) =>
       },
       {
         location: new window.kakao.maps.LatLng(lat, lng),
-        radius: 3000,
+        radius,
         sort: window.kakao.maps.services.SortBy.DISTANCE,
       },
     )
   })
 
 // 키워드를 우선순위대로 순차 검색해 첫 성공 결과를 쓴다 (뷰 좋은 코스 / 날씨 코스가 공유)
-const searchNearbyPlaceByPriority = async (keywords, lat, lng) => {
+const searchNearbyPlaceByPriority = async (keywords, lat, lng, radius) => {
   for (const keyword of keywords) {
-    const place = await searchNearbyPlace(keyword, lat, lng)
+    const place = await searchNearbyPlace(keyword, lat, lng, radius)
     if (place) return place
   }
   return null
@@ -320,7 +322,9 @@ const applyCourseType = async (latitude, longitude) => {
   }
   await loadKakaoMapSdk()
   const keywords = type === 'weather' ? pickWeatherKeywords(weather.value) : COURSE_KEYWORDS[type]
-  const place = keywords ? await searchNearbyPlaceByPriority(keywords, latitude, longitude) : null
+  // 국밥런은 목적지형 편도 코스라 루프 크기와 무관하게 넉넉한 반경으로 찾는다
+  const searchRadius = type === 'gukbap' ? 3000 : loopSearchRadius(routeAdvice.value.distanceKm ?? 5)
+  const place = keywords ? await searchNearbyPlaceByPriority(keywords, latitude, longitude, searchRadius) : null
   if (!place) {
     renderMap(latitude, longitude, routeAdvice.value.distanceKm)
     return
