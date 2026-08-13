@@ -57,6 +57,35 @@ const buildLoopPoints = (lat, lng, distanceKm) => {
   return points
 }
 
+const buildLoopWaypoints = (lat, lng, distanceKm, count = 6) => {
+  const loop = buildLoopPoints(lat, lng, distanceKm)
+  const step = Math.max(1, Math.floor((loop.length - 1) / count))
+  const waypoints = []
+  for (let i = 0; i < loop.length - 1; i += step) {
+    waypoints.push(loop[i])
+  }
+  waypoints.push(loop[0])
+  return waypoints
+}
+
+// ORS는 실도로 경로용 서버 프록시(api/route.js) — GitHub Pages엔 서버가 없어 404가 정상이며, 이 경우 합성 원형 코스로 조용히 폴백한다
+const fetchRealRoutePath = async (lat, lng, distanceKm) => {
+  const coordinates = buildLoopWaypoints(lat, lng, distanceKm).map((p) => [p.lng, p.lat])
+  const response = await axios.post(
+    '/api/route',
+    { coordinates },
+    { timeout: 8000 },
+  )
+  const path = response.data?.path
+  if (!Array.isArray(path) || path.length < 2) {
+    throw new Error('경로 데이터 없음')
+  }
+  return path.map(([lng2, lat2]) => new window.kakao.maps.LatLng(lat2, lng2))
+}
+
+const buildSyntheticLoopPath = (lat, lng, distanceKm) =>
+  buildLoopPoints(lat, lng, distanceKm).map((p) => new window.kakao.maps.LatLng(p.lat, p.lng))
+
 const renderMap = async (latitude, longitude, courseKm) => {
   try {
     await loadKakaoMapSdk()
@@ -67,9 +96,12 @@ const renderMap = async (latitude, longitude, courseKm) => {
     new window.kakao.maps.Marker({ position: center, map })
 
     if (courseKm) {
-      const path = buildLoopPoints(latitude, longitude, courseKm).map(
-        (p) => new window.kakao.maps.LatLng(p.lat, p.lng),
-      )
+      let path
+      try {
+        path = await fetchRealRoutePath(latitude, longitude, courseKm)
+      } catch {
+        path = buildSyntheticLoopPath(latitude, longitude, courseKm)
+      }
       new window.kakao.maps.Polyline({
         map,
         path,
