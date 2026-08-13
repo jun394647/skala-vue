@@ -876,22 +876,6 @@ onMounted(fetchWeather)
   padding: 16px 18px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 5px solid rgba(255, 255, 255, 0.2);
-}
-
-.crop-card.danger {
-  border-left-color: #ff6b5f;
-  background: rgba(214, 69, 58, 0.1);
-}
-
-.crop-card.caution {
-  border-left-color: #f3a712;
-  background: rgba(243, 167, 18, 0.08);
-}
-
-.crop-card.safe {
-  border-left-color: #2ea05b;
-  background: rgba(46, 160, 91, 0.06);
 }
 
 .crop-card-head {
