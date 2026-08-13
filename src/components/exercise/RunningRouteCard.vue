@@ -1,9 +1,10 @@
 <script setup>
 // 가이드 범위를 넘어선 추가 기능 — 브라우저 위치 정보 + OpenWeatherMap으로 현재 위치 날씨 기반 코스 추천
 // + 카카오맵으로 현재 위치 지도 표시
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import axios from 'axios'
 import { friendlyStatus } from '../../utils/weatherText'
+import { clothingTip } from '../../utils/clothingTip'
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather'
@@ -14,6 +15,15 @@ const weather = ref(null)
 const routeAdvice = ref(null)
 const status = ref('idle')
 const mapContainer = ref(null)
+const coords = ref(null)
+
+const formatHourMinute = (unixSeconds) =>
+  new Date(unixSeconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+
+const kakaoMapLink = computed(() => {
+  if (!coords.value) return ''
+  return `https://map.kakao.com/link/map/러닝 코스,${coords.value.lat},${coords.value.lng}`
+})
 
 let kakaoSdkPromise = null
 const loadKakaoMapSdk = () => {
@@ -77,12 +87,21 @@ const renderMap = async (latitude, longitude, courseKm) => {
   }
 }
 
+const RAIN_INDOOR_THRESHOLD_MM = 2
+
 const pickRoute = (w) => {
-  if (w.rain) {
+  if (w.rainVolume >= RAIN_INDOOR_THRESHOLD_MM) {
     return {
       distance: '실내 3km 대체 추천',
       distanceKm: null,
-      tip: '비가 오고 있어요. 러닝머신이나 실내 운동을 추천해요.',
+      tip: '비가 제법 와요. 러닝머신이나 실내 운동을 추천해요.',
+    }
+  }
+  if (w.rainVolume > 0) {
+    return {
+      distance: '3km 짧은 루프',
+      distanceKm: 3,
+      tip: '가는 비가 내려요. 방수 재킷 챙기고 미끄럼 조심해서 가볍게 다녀오세요.',
     }
   }
   if (w.temp >= 30) {
@@ -127,12 +146,15 @@ const fetchLocationWeather = () => {
           params: { lat: latitude, lon: longitude, appid: API_KEY, units: 'metric', lang: 'kr' },
         })
         const data = response.data
+        coords.value = { lat: latitude, lng: longitude }
         locationName.value = data.name
         weather.value = {
           temp: Math.round(data.main.temp),
           status: data.weather[0].description,
           windSpeed: data.wind.speed,
-          rain: Boolean(data.rain),
+          rainVolume: data.rain?.['1h'] ?? data.rain?.['3h'] ?? 0,
+          sunrise: formatHourMinute(data.sys.sunrise),
+          sunset: formatHourMinute(data.sys.sunset),
         }
         routeAdvice.value = pickRoute(weather.value)
         status.value = 'ready'
@@ -163,6 +185,11 @@ onMounted(fetchLocationWeather)
       <p class="route-location">{{ locationName }} · {{ weather.temp }}°C · {{ friendlyStatus(weather.status) }}</p>
       <p class="route-distance">{{ routeAdvice.distance }}</p>
       <p class="route-tip">{{ routeAdvice.tip }}</p>
+      <p class="route-clothing">{{ clothingTip(weather.temp) }}</p>
+      <p class="route-sun">🌅 일출 {{ weather.sunrise }} · 🌇 일몰 {{ weather.sunset }} — 너무 이르거나 늦은 시간은 피해주세요.</p>
+      <a v-if="kakaoMapLink" :href="kakaoMapLink" target="_blank" rel="noopener" class="route-map-link">
+        카카오맵 앱에서 보기 ↗
+      </a>
     </template>
 
     <el-button size="small" @click="fetchLocationWeather">다시 확인</el-button>
@@ -196,5 +223,22 @@ onMounted(fetchLocationWeather)
 .route-tip {
   color: var(--ex-text-soft, #7f8c8d);
   margin-bottom: 12px;
+}
+.route-clothing,
+.route-sun {
+  font-size: var(--ex-font-sm, 0.875rem);
+  color: var(--ex-text-soft, #7f8c8d);
+  margin-bottom: 6px;
+}
+.route-map-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: var(--ex-font-sm, 0.875rem);
+  color: #1a7ea8;
+  text-decoration: none;
+  font-weight: bold;
+}
+.route-map-link:hover {
+  text-decoration: underline;
 }
 </style>

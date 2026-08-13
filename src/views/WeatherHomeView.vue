@@ -15,11 +15,21 @@ const router = useRouter()
 const route = useRoute()
 const favoritesStore = useFavoritesStore()
 
+const RECENT_SEARCH_KEY = 'exercise-recent-searches'
+
 const weatherList = ref([])
 const searchQuery = ref('')
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 const isLoading = ref(false)
 const showFavoritesOnly = ref(false)
+const recentSearches = ref(JSON.parse(localStorage.getItem(RECENT_SEARCH_KEY) || '[]'))
+
+const saveRecentSearch = (query) => {
+  const trimmed = query.trim()
+  if (!trimmed) return
+  recentSearches.value = [trimmed, ...recentSearches.value.filter((item) => item !== trimmed)].slice(0, 5)
+  localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(recentSearches.value))
+}
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
@@ -68,11 +78,14 @@ onMounted(() => {
   fetchRealTimeWeather()
 })
 
+let recentSearchTimer = null
 watch(searchQuery, (newQuery) => {
   router.push({
     path: route.path,
     query: { search: newQuery || undefined },
   })
+  clearTimeout(recentSearchTimer)
+  recentSearchTimer = setTimeout(() => saveRecentSearch(newQuery), 800)
 })
 
 const filteredWeatherList = computed(() => {
@@ -91,6 +104,16 @@ const handleDetailJump = (id) => {
   <div class="dashboard-wrapper">
     <BaseDashboardCard>
       <SearchBar :current-query="searchQuery" @update-query="(val) => (searchQuery = val)" />
+      <div v-if="recentSearches.length" class="recent-search-chips">
+        <button
+          v-for="term in recentSearches"
+          :key="term"
+          class="recent-search-chip"
+          @click="searchQuery = term"
+        >
+          {{ term }}
+        </button>
+      </div>
     </BaseDashboardCard>
 
     <BaseDashboardCard>
@@ -130,6 +153,25 @@ const handleDetailJump = (id) => {
 </template>
 
 <style scoped>
+.recent-search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.recent-search-chip {
+  border: 1px solid var(--ex-border, #e9ecef);
+  background: var(--ex-card-bg, #fff);
+  color: var(--ex-text-soft, #7f8c8d);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: var(--ex-font-xs, 0.75rem);
+  cursor: pointer;
+}
+.recent-search-chip:hover {
+  color: var(--ex-text, #2c3e50);
+  border-color: var(--ex-text-soft, #7f8c8d);
+}
 .favorite-filter {
   display: block;
   margin-bottom: 12px;

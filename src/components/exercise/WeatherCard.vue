@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useConfigStore } from '../../stores/configStore'
 import { useFavoritesStore } from '../../stores/favoritesStore'
 import { friendlyStatus } from '../../utils/weatherText'
@@ -22,12 +23,23 @@ const displayTemp = computed(() => {
   }
   return rawTemp
 })
+
+const handleToggleFavorite = () => {
+  favoritesStore.toggleFavorite(props.cityItem.id)
+  ElMessage({
+    message: favoritesStore.isFavorite(props.cityItem.id)
+      ? `⭐ ${props.cityItem.name}을(를) 즐겨찾기에 추가했어요.`
+      : `${props.cityItem.name}을(를) 즐겨찾기에서 뺐어요.`,
+    type: 'success',
+    duration: 1500,
+  })
+}
 </script>
 
 <template>
   <div class="weather-card" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
     <div class="card-head">
-      <button class="btn-favorite" @click.stop="favoritesStore.toggleFavorite(cityItem.id)">
+      <button class="btn-favorite" @click.stop="handleToggleFavorite">
         {{ favoritesStore.isFavorite(cityItem.id) ? '⭐' : '☆' }}
       </button>
       <h4>{{ cityItem.name }} ({{ friendlyStatus(cityItem.status) }})</h4>
