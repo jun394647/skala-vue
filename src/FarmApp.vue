@@ -184,6 +184,24 @@ const dayDiffLabel = (dayDiff) => {
   return `${dayDiff}일 후`
 }
 
+const formatClock = (unixSeconds) => new Date(unixSeconds * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+const bestWorkWindow = computed(() => {
+  const todaySlots = forecast.value.filter((slot) => slot.dayDiff === 0)
+  const candidates = todaySlots.filter((slot) => slot.pop < 30 && slot.temp >= 5 && slot.temp <= 32)
+  if (!candidates.length) return null
+  const best = candidates.reduce((a, b) => (b.pop < a.pop ? b : a))
+  return `${best.hour}시 ~ ${(best.hour + 3) % 24}시`
+})
+
+const frostWarning = computed(() => {
+  const upcoming = forecast.value.filter((slot) => slot.dayDiff <= 1)
+  if (!upcoming.length) return null
+  const coldest = upcoming.reduce((min, slot) => (slot.temp < min.temp ? slot : min), upcoming[0])
+  if (coldest.temp > 3) return null
+  return `${dayDiffPrefix(coldest.dayDiff)}${coldest.hour}시경 최저기온이 ${coldest.temp}°C까지 떨어질 것으로 예상됩니다. 서리 대비가 필요합니다.`
+})
+
 const fetchWeather = async () => {
   isLoading.value = true
   hasError.value = false
@@ -226,6 +244,8 @@ const fetchWeather = async () => {
       temp: slot.temp,
       icon: slot.icon,
       pop: slot.pop,
+      hour: slot.hour,
+      dayDiff: slot.dayDiff,
       isNewDay: index > 0 && slot.dayDiff !== rawSlots[index - 1].dayDiff,
       dayLabel: slot.dayDiff > 0 ? dayDiffLabel(slot.dayDiff) : '',
     }))
@@ -276,98 +296,125 @@ onMounted(fetchWeather)
       <p v-else-if="hasError" class="status-text error" role="alert" aria-live="polite">날씨 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
 
       <template v-else-if="weather">
-        <section class="hero-card">
-          <div class="hero-illustration" aria-hidden="true">
-            <svg v-if="illustrationType === 'sun'" viewBox="0 0 120 120" class="illust illust-sun">
-              <g class="sun-rays">
-                <line v-for="n in 8" :key="n" x1="60" y1="6" x2="60" y2="20" :transform="`rotate(${n * 45} 60 60)`" />
-              </g>
-              <circle cx="60" cy="60" r="26" class="sun-core" />
-            </svg>
-            <svg v-else-if="illustrationType === 'cloud'" viewBox="0 0 140 100" class="illust illust-cloud">
-              <ellipse cx="55" cy="55" rx="40" ry="24" class="cloud-back" />
-              <ellipse cx="85" cy="50" rx="32" ry="20" class="cloud-front" />
-            </svg>
-            <svg v-else-if="illustrationType === 'rain'" viewBox="0 0 140 110" class="illust illust-rain">
-              <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
-              <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
-              <line v-for="n in 3" :key="n" :x1="45 + n * 18" y1="78" :x2="40 + n * 18" y2="96" class="rain-drop" :style="{ animationDelay: `${n * 0.2}s` }" />
-            </svg>
-            <svg v-else viewBox="0 0 140 110" class="illust illust-snow">
-              <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
-              <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
-              <circle v-for="n in 3" :key="n" :cx="45 + n * 18" cy="90" r="3" class="snow-flake" :style="{ animationDelay: `${n * 0.3}s` }" />
-            </svg>
-          </div>
-          <div class="hero-region">{{ farmLocation.name }} 현재 날씨</div>
-          <div class="hero-temp">{{ weather.temp }}<span class="hero-unit">°C</span></div>
-          <div class="hero-status">{{ friendlyStatus(weather.status) }}</div>
-          <div class="hero-feels">체감 온도 {{ weather.feelsLike }}°C</div>
-          <div v-if="weather.rainVolume > 0" class="hero-rain">☔ 지금 1시간 강수량 {{ weather.rainVolume }}mm</div>
-        </section>
+        <div v-if="frostWarning" class="frost-alert" role="alert">
+          <span aria-hidden="true">❄️</span> {{ frostWarning }}
+        </div>
 
-        <section class="forecast-strip">
-          <div class="forecast-title">오늘 · 내일 시간별 예보</div>
-          <div class="forecast-row">
-            <template v-for="(slot, index) in forecast" :key="index">
-              <div v-if="slot.isNewDay" class="forecast-divider">
-                <span class="forecast-divider-label">{{ slot.dayLabel }}</span>
+        <div class="dashboard-grid">
+          <div class="dashboard-main">
+            <section class="hero-card">
+              <div class="hero-illustration" aria-hidden="true">
+                <svg v-if="illustrationType === 'sun'" viewBox="0 0 120 120" class="illust illust-sun">
+                  <g class="sun-rays">
+                    <line v-for="n in 8" :key="n" x1="60" y1="6" x2="60" y2="20" :transform="`rotate(${n * 45} 60 60)`" />
+                  </g>
+                  <circle cx="60" cy="60" r="26" class="sun-core" />
+                </svg>
+                <svg v-else-if="illustrationType === 'cloud'" viewBox="0 0 140 100" class="illust illust-cloud">
+                  <ellipse cx="55" cy="55" rx="40" ry="24" class="cloud-back" />
+                  <ellipse cx="85" cy="50" rx="32" ry="20" class="cloud-front" />
+                </svg>
+                <svg v-else-if="illustrationType === 'rain'" viewBox="0 0 140 110" class="illust illust-rain">
+                  <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
+                  <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
+                  <line v-for="n in 3" :key="n" :x1="45 + n * 18" y1="78" :x2="40 + n * 18" y2="96" class="rain-drop" :style="{ animationDelay: `${n * 0.2}s` }" />
+                </svg>
+                <svg v-else viewBox="0 0 140 110" class="illust illust-snow">
+                  <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
+                  <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
+                  <circle v-for="n in 3" :key="n" :cx="45 + n * 18" cy="90" r="3" class="snow-flake" :style="{ animationDelay: `${n * 0.3}s` }" />
+                </svg>
               </div>
-              <div class="forecast-slot">
-                <div class="forecast-time">{{ slot.time }}</div>
-                <div class="forecast-icon">{{ weatherEmoji(slot.icon) }}</div>
-                <div class="forecast-temp">{{ slot.temp }}°</div>
-                <div class="forecast-pop">☔ {{ slot.pop }}%</div>
+              <div class="hero-region">{{ farmLocation.name }} 현재 날씨</div>
+              <div class="hero-temp">{{ weather.temp }}<span class="hero-unit">°C</span></div>
+              <div class="hero-status">{{ friendlyStatus(weather.status) }}</div>
+              <div class="hero-feels">체감 온도 {{ weather.feelsLike }}°C</div>
+              <div v-if="weather.rainVolume > 0" class="hero-rain">☔ 지금 1시간 강수량 {{ weather.rainVolume }}mm</div>
+            </section>
+
+            <section class="crop-section">
+              <div class="crop-section-title">품목별 위험 안내</div>
+              <div class="crop-list">
+                <div v-for="crop in visibleCropStatus" :key="crop.id" class="crop-card" :class="crop.level">
+                  <div class="crop-card-head">
+                    <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
+                    <span class="crop-name">{{ crop.name }}</span>
+                    <span class="crop-badge" :class="crop.level" :aria-label="`${crop.name}, ${levelLabel[crop.level]} 등급`">{{ levelLabel[crop.level] }}</span>
+                  </div>
+                  <ul class="crop-messages">
+                    <li v-for="(msg, index) in crop.messages" :key="index">{{ msg }}</li>
+                  </ul>
+                </div>
               </div>
-            </template>
+            </section>
           </div>
-        </section>
 
-        <section class="crop-section">
-          <div class="crop-section-title">품목별 위험 안내</div>
-          <div class="crop-list">
-            <div v-for="crop in visibleCropStatus" :key="crop.id" class="crop-card" :class="crop.level">
-              <div class="crop-card-head">
-                <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
-                <span class="crop-name">{{ crop.name }}</span>
-                <span class="crop-badge" :class="crop.level" :aria-label="`${crop.name}, ${levelLabel[crop.level]} 등급`">{{ levelLabel[crop.level] }}</span>
+          <div class="dashboard-side">
+            <section class="tips-section">
+              <div class="tips-title">🌅 오늘의 참고 정보</div>
+              <div class="tips-row">
+                <span>일출</span>
+                <strong>{{ formatClock(weather.sunrise) }}</strong>
               </div>
-              <ul class="crop-messages">
-                <li v-for="(msg, index) in crop.messages" :key="index">{{ msg }}</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+              <div class="tips-row">
+                <span>일몰</span>
+                <strong>{{ formatClock(weather.sunset) }}</strong>
+              </div>
+              <div v-if="bestWorkWindow" class="tips-row">
+                <span>추천 작업 시간</span>
+                <strong>{{ bestWorkWindow }}</strong>
+              </div>
+              <p v-else class="tips-empty">오늘은 강수 확률이 낮은 시간대가 마땅치 않습니다.</p>
+            </section>
 
-        <section class="info-grid">
-          <div class="info-tile">
-            <div class="info-icon humidity">💧</div>
-            <div class="info-label">습도</div>
-            <div class="info-value">{{ weather.humidity }}%</div>
-          </div>
-          <div class="info-tile">
-            <div class="info-icon wind">🌬️</div>
-            <div class="info-label">바람 (돌풍)</div>
-            <div class="info-value">{{ weather.windSpeed }}<span class="info-sub">/{{ weather.windGust }}m/s</span></div>
-          </div>
-          <div class="info-tile">
-            <div class="info-icon sun">☀️</div>
-            <div class="info-label">예상 일조시간</div>
-            <div class="info-value">{{ estimatedSunlightHours }}시간</div>
-          </div>
-          <div class="info-tile">
-            <div class="info-icon air">🌫️</div>
-            <div class="info-label">대기질</div>
-            <div class="info-value">{{ air ? airLevel[air] : '정보없음' }}</div>
-          </div>
-        </section>
+            <section class="forecast-strip">
+              <div class="forecast-title">오늘 · 내일 시간별 예보</div>
+              <div class="forecast-row">
+                <template v-for="(slot, index) in forecast" :key="index">
+                  <div v-if="slot.isNewDay" class="forecast-divider">
+                    <span class="forecast-divider-label">{{ slot.dayLabel }}</span>
+                  </div>
+                  <div class="forecast-slot">
+                    <div class="forecast-time">{{ slot.time }}</div>
+                    <div class="forecast-icon">{{ weatherEmoji(slot.icon) }}</div>
+                    <div class="forecast-temp">{{ slot.temp }}°</div>
+                    <div class="forecast-pop">☔ {{ slot.pop }}%</div>
+                  </div>
+                </template>
+              </div>
+            </section>
 
-        <section class="sunlight-section">
-          <div class="sunlight-label">오늘 예상 일조시간 {{ estimatedSunlightHours }}시간 / 낮 길이 {{ Math.round(daylightHours * 10) / 10 }}시간</div>
-          <div class="sunlight-track">
-            <div class="sunlight-fill" :style="{ width: sunlightRatio + '%' }"></div>
+            <section class="info-grid">
+              <div class="info-tile">
+                <div class="info-icon humidity">💧</div>
+                <div class="info-label">습도</div>
+                <div class="info-value">{{ weather.humidity }}%</div>
+              </div>
+              <div class="info-tile">
+                <div class="info-icon wind">🌬️</div>
+                <div class="info-label">바람 (돌풍)</div>
+                <div class="info-value">{{ weather.windSpeed }}<span class="info-sub">/{{ weather.windGust }}m/s</span></div>
+              </div>
+              <div class="info-tile">
+                <div class="info-icon sun">☀️</div>
+                <div class="info-label">예상 일조시간</div>
+                <div class="info-value">{{ estimatedSunlightHours }}시간</div>
+              </div>
+              <div class="info-tile">
+                <div class="info-icon air">🌫️</div>
+                <div class="info-label">대기질</div>
+                <div class="info-value">{{ air ? airLevel[air] : '정보없음' }}</div>
+              </div>
+            </section>
+
+            <section class="sunlight-section">
+              <div class="sunlight-label">오늘 예상 일조시간 {{ estimatedSunlightHours }}시간 / 낮 길이 {{ Math.round(daylightHours * 10) / 10 }}시간</div>
+              <div class="sunlight-track">
+                <div class="sunlight-fill" :style="{ width: sunlightRatio + '%' }"></div>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </template>
     </div>
   </div>
@@ -377,7 +424,8 @@ onMounted(fetchWeather)
 .farm-app {
   --font-scale: 1;
   min-height: 100vh;
-  padding: 32px 16px 60px;
+  width: 100%;
+  padding: 24px clamp(16px, 4vw, 56px) 60px;
   background: radial-gradient(circle at 20% 0%, #1b2b45 0%, #0c1526 55%, #08101c 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
   color: #f3f6fa;
@@ -388,23 +436,47 @@ onMounted(fetchWeather)
 }
 
 .farm-shell {
-  max-width: 640px;
+  max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
 }
 
-@media (min-width: 860px) {
-  .farm-shell {
-    max-width: 960px;
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1.6fr 1fr;
   }
 
   .crop-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
   }
+}
 
-  .info-grid {
-    grid-template-columns: repeat(4, 1fr);
+@media (min-width: 1300px) {
+  .crop-list {
+    grid-template-columns: repeat(3, 1fr);
   }
+}
+
+.frost-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  background: rgba(58, 130, 214, 0.18);
+  border: 1px solid rgba(124, 180, 245, 0.4);
+  color: #cfe4fc;
+  font-size: calc(1.1rem * var(--font-scale, 1));
+  font-weight: 700;
 }
 
 .accessibility-bar {
@@ -659,6 +731,46 @@ onMounted(fetchWeather)
   color: #9cc4f5;
   font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 700;
+}
+
+.tips-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.tips-title {
+  font-size: calc(1.05rem * var(--font-scale, 1));
+  font-weight: 700;
+  color: #f3d9a0;
+  margin-bottom: 12px;
+}
+
+.tips-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: calc(1.05rem * var(--font-scale, 1));
+  color: #dbe4f2;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tips-row:first-of-type {
+  border-top: none;
+}
+
+.tips-row strong {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.tips-empty {
+  font-size: calc(0.95rem * var(--font-scale, 1));
+  color: #93a2ba;
+  margin: 8px 0 0;
 }
 
 .forecast-strip {
