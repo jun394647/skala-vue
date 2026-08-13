@@ -121,6 +121,16 @@ const sunlightRatio = computed(() => {
 
 const airLevel = { 1: '좋음', 2: '양호', 3: '보통', 4: '나쁨', 5: '매우나쁨' }
 
+const statusAliases = {
+  온흐림: '흐림',
+  튼구름: '구름 많음',
+  '실 비': '가는 비',
+  박무: '옅은 안개',
+  연무: '안개',
+}
+
+const friendlyStatus = (status) => statusAliases[status] ?? status
+
 const weatherEmoji = (iconCode) => {
   const prefix = iconCode?.slice(0, 2)
   const map = {
@@ -228,7 +238,7 @@ onMounted(fetchWeather)
           :aria-pressed="bigText"
           @click="toggleBigText"
         >
-          <span aria-hidden="true">🔍</span> 가나다 글씨 크게
+          {{ bigText ? '글씨 작게' : '글씨 크게' }}
         </button>
       </div>
 
@@ -250,7 +260,7 @@ onMounted(fetchWeather)
           <div class="hero-watermark">{{ weatherEmoji(weather.icon) }}</div>
           <div class="hero-region">{{ farmLocation.name }} 현재 날씨</div>
           <div class="hero-temp">{{ weather.temp }}<span class="hero-unit">°C</span></div>
-          <div class="hero-status">{{ weather.status }}</div>
+          <div class="hero-status">{{ friendlyStatus(weather.status) }}</div>
           <div class="hero-feels">체감 온도 {{ weather.feelsLike }}°C</div>
           <div v-if="weather.rainVolume > 0" class="hero-rain">☔ 지금 1시간 강수량 {{ weather.rainVolume }}mm</div>
         </section>
@@ -339,6 +349,21 @@ onMounted(fetchWeather)
 .farm-shell {
   max-width: 640px;
   margin: 0 auto;
+}
+
+@media (min-width: 860px) {
+  .farm-shell {
+    max-width: 960px;
+  }
+
+  .crop-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .accessibility-bar {
