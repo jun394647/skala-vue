@@ -6,14 +6,17 @@ import axios from 'axios'
 import BaseDashboardCard from '../components/exercise/BaseDashboardCard.vue'
 import SearchBar from '../components/exercise/SearchBar.vue'
 import WeatherCard from '../components/exercise/WeatherCard.vue'
+import { useFavoritesStore } from '../stores/favoritesStore'
 
 const router = useRouter()
 const route = useRoute()
+const favoritesStore = useFavoritesStore()
 
 const weatherList = ref([])
 const searchQuery = ref('')
 const selectedCityInfo = ref('카드를 클릭하거나 검색해 보세요.')
 const isLoading = ref(false)
+const showFavoritesOnly = ref(false)
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
@@ -71,8 +74,9 @@ watch(searchQuery, (newQuery) => {
 
 const filteredWeatherList = computed(() => {
   const query = searchQuery.value.trim()
-  if (!query) return weatherList.value
-  return weatherList.value.filter((item) => item.name.includes(query))
+  const base = query ? weatherList.value.filter((item) => item.name.includes(query)) : weatherList.value
+  if (!showFavoritesOnly.value) return base
+  return base.filter((item) => favoritesStore.isFavorite(item.id))
 })
 
 const handleDetailJump = (id) => {
@@ -88,6 +92,11 @@ const handleDetailJump = (id) => {
 
     <BaseDashboardCard>
       <h3>🏙️ 지역별 날씨 현황 (실시간 기상청 연동)</h3>
+
+      <label class="favorite-filter">
+        <input type="checkbox" v-model="showFavoritesOnly" />
+        ⭐ 즐겨찾기만 보기 ({{ favoritesStore.favoriteCount }})
+      </label>
 
       <p
         v-if="isLoading"
@@ -118,6 +127,11 @@ const handleDetailJump = (id) => {
 </template>
 
 <style scoped>
+.favorite-filter {
+  display: block;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
 .status-bar {
   background: #e8f5e9;
   padding: 10px;

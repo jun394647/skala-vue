@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useConfigStore } from '../../stores/configStore'
+import { useFavoritesStore } from '../../stores/favoritesStore'
 
 const props = defineProps({
   cityItem: {
@@ -12,6 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['select-card', 'click-detail'])
 
 const configStore = useConfigStore()
+const favoritesStore = useFavoritesStore()
 const displayTemp = computed(() => {
   const rawTemp = props.cityItem.temp
   if (configStore.unit === 'fahrenheit') {
@@ -23,6 +25,9 @@ const displayTemp = computed(() => {
 
 <template>
   <div class="weather-card" @click="emit('select-card', `${cityItem.name}이 선택되었습니다.`)">
+    <button class="btn-favorite" @click.stop="favoritesStore.toggleFavorite(cityItem.id)">
+      {{ favoritesStore.isFavorite(cityItem.id) ? '⭐' : '☆' }}
+    </button>
     <h4>{{ cityItem.name }} ({{ cityItem.status }})</h4>
     <p>현재 기온: {{ displayTemp }}{{ configStore.unitSymbol }}</p>
 
@@ -64,5 +69,15 @@ const displayTemp = computed(() => {
   top: 15px;
   padding: 6px 10px;
   cursor: pointer;
+}
+.btn-favorite {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
 }
 </style>
