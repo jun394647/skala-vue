@@ -147,6 +147,26 @@ const weatherEmoji = (iconCode) => {
   return map[prefix] ?? '🌡️'
 }
 
+const illustrationType = computed(() => {
+  const prefix = weather.value?.icon?.slice(0, 2)
+  if (prefix === '01') return 'sun'
+  if (prefix === '13') return 'snow'
+  if (prefix === '09' || prefix === '10' || prefix === '11') return 'rain'
+  return 'cloud'
+})
+
+const heroGlow = computed(() => {
+  if (!weather.value) return '#1b2b45'
+  const t = weather.value.temp
+  if (t <= 5) return '#173a58'
+  if (t <= 15) return '#1b3a4a'
+  if (t <= 25) return '#1b2b45'
+  if (t <= 32) return '#3a2f1f'
+  return '#4a2415'
+})
+
+const pageBackground = computed(() => `radial-gradient(circle at 20% 0%, ${heroGlow.value} 0%, #0c1526 55%, #08101c 100%)`)
+
 const startOfDay = (date) => {
   const start = new Date(date)
   start.setHours(0, 0, 0, 0)
@@ -229,7 +249,7 @@ onMounted(fetchWeather)
 </script>
 
 <template>
-  <div class="farm-app" :class="{ 'big-text': bigText }">
+  <div class="farm-app" :class="{ 'big-text': bigText }" :style="{ background: pageBackground }">
     <div class="farm-shell">
       <div class="accessibility-bar">
         <button
@@ -257,7 +277,28 @@ onMounted(fetchWeather)
 
       <template v-else-if="weather">
         <section class="hero-card">
-          <div class="hero-watermark">{{ weatherEmoji(weather.icon) }}</div>
+          <div class="hero-illustration" aria-hidden="true">
+            <svg v-if="illustrationType === 'sun'" viewBox="0 0 120 120" class="illust illust-sun">
+              <g class="sun-rays">
+                <line v-for="n in 8" :key="n" x1="60" y1="6" x2="60" y2="20" :transform="`rotate(${n * 45} 60 60)`" />
+              </g>
+              <circle cx="60" cy="60" r="26" class="sun-core" />
+            </svg>
+            <svg v-else-if="illustrationType === 'cloud'" viewBox="0 0 140 100" class="illust illust-cloud">
+              <ellipse cx="55" cy="55" rx="40" ry="24" class="cloud-back" />
+              <ellipse cx="85" cy="50" rx="32" ry="20" class="cloud-front" />
+            </svg>
+            <svg v-else-if="illustrationType === 'rain'" viewBox="0 0 140 110" class="illust illust-rain">
+              <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
+              <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
+              <line v-for="n in 3" :key="n" :x1="45 + n * 18" y1="78" :x2="40 + n * 18" y2="96" class="rain-drop" :style="{ animationDelay: `${n * 0.2}s` }" />
+            </svg>
+            <svg v-else viewBox="0 0 140 110" class="illust illust-snow">
+              <ellipse cx="55" cy="45" rx="40" ry="24" class="cloud-back" />
+              <ellipse cx="85" cy="40" rx="32" ry="20" class="cloud-front" />
+              <circle v-for="n in 3" :key="n" :cx="45 + n * 18" cy="90" r="3" class="snow-flake" :style="{ animationDelay: `${n * 0.3}s` }" />
+            </svg>
+          </div>
           <div class="hero-region">{{ farmLocation.name }} 현재 날씨</div>
           <div class="hero-temp">{{ weather.temp }}<span class="hero-unit">°C</span></div>
           <div class="hero-status">{{ friendlyStatus(weather.status) }}</div>
@@ -453,13 +494,126 @@ onMounted(fetchWeather)
   margin-bottom: 20px;
 }
 
-.hero-watermark {
+.hero-illustration {
   position: absolute;
   right: -10px;
-  top: -20px;
-  font-size: calc(8rem * var(--font-scale, 1));
-  opacity: 0.12;
-  filter: blur(0.5px);
+  top: -10px;
+  width: 150px;
+  opacity: 0.5;
+}
+
+.illust {
+  width: 100%;
+  height: auto;
+}
+
+.sun-core {
+  fill: #f3a712;
+}
+
+.sun-rays line {
+  stroke: #f3a712;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transform-origin: 60px 60px;
+  animation: sun-spin 24s linear infinite;
+}
+
+@keyframes sun-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.illust-sun {
+  animation: sun-pulse 6s ease-in-out infinite;
+}
+
+@keyframes sun-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.cloud-back {
+  fill: rgba(255, 255, 255, 0.55);
+}
+
+.cloud-front {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+.illust-cloud .cloud-front,
+.illust-rain .cloud-front,
+.illust-snow .cloud-front {
+  animation: cloud-drift 8s ease-in-out infinite;
+}
+
+@keyframes cloud-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+.rain-drop {
+  stroke: #7fb6f5;
+  stroke-width: 3;
+  stroke-linecap: round;
+  animation: rain-fall 1s linear infinite;
+}
+
+@keyframes rain-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.snow-flake {
+  fill: #f3f6fa;
+  animation: snow-fall 2.4s ease-in-out infinite;
+}
+
+@keyframes snow-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sun-rays line,
+  .illust-sun,
+  .cloud-front,
+  .rain-drop,
+  .snow-flake {
+    animation: none;
+  }
 }
 
 .hero-region {
