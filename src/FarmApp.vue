@@ -103,6 +103,14 @@ const visibleCropStatus = computed(() => cropStatus.value.filter((crop) => selec
 
 const levelLabel = { danger: '위험', caution: '주의', safe: '안전' }
 
+const cropMoodText = {
+  safe: '튼튼하게 잘 자라고 있어요.',
+  caution: '조금 지쳐 보여요, 관리가 필요해요.',
+  danger: '많이 힘들어하고 있어요, 바로 조치가 필요해요.',
+}
+
+const mainCrop = computed(() => visibleCropStatus.value[0] ?? null)
+
 const daylightHours = computed(() => {
   if (!weather.value) return 0
   return (weather.value.sunset - weather.value.sunrise) / 3600
@@ -330,6 +338,29 @@ onMounted(fetchWeather)
               <div class="hero-status">{{ friendlyStatus(weather.status) }}</div>
               <div class="hero-feels">체감 온도 {{ weather.feelsLike }}°C</div>
               <div v-if="weather.rainVolume > 0" class="hero-rain">☔ 지금 1시간 강수량 {{ weather.rainVolume }}mm</div>
+            </section>
+
+            <section v-if="mainCrop" class="main-crop-card">
+              <div class="main-crop-info">
+                <div class="main-crop-eyebrow">지금 가장 신경 써야 할 작물</div>
+                <div class="main-crop-name"><span aria-hidden="true">{{ mainCrop.icon }}</span> {{ mainCrop.name }}</div>
+                <span class="crop-badge" :class="mainCrop.level" :aria-label="`${mainCrop.name}, ${levelLabel[mainCrop.level]} 등급`">{{ levelLabel[mainCrop.level] }}</span>
+                <p class="main-crop-desc">{{ cropMoodText[mainCrop.level] }}</p>
+              </div>
+              <svg viewBox="0 0 120 140" class="plant-illust" :class="mainCrop.level" aria-hidden="true">
+                <ellipse cx="60" cy="128" rx="34" ry="8" class="plant-ground" />
+                <line x1="60" y1="128" x2="60" y2="46" class="plant-stem" />
+                <g class="plant-leaf" transform-origin="60px 62px">
+                  <ellipse cx="32" cy="62" rx="20" ry="9" />
+                </g>
+                <g class="plant-leaf" transform-origin="60px 86px">
+                  <ellipse cx="88" cy="86" rx="20" ry="9" />
+                </g>
+                <g class="plant-leaf" transform-origin="60px 106px">
+                  <ellipse cx="36" cy="106" rx="18" ry="8" />
+                </g>
+                <circle cx="60" cy="42" r="10" class="plant-bud" />
+              </svg>
             </section>
 
             <section class="crop-section">
@@ -563,12 +594,10 @@ onMounted(fetchWeather)
 .hero-card {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
   padding: 36px 24px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
   margin-bottom: 20px;
 }
 
@@ -852,6 +881,130 @@ onMounted(fetchWeather)
   font-size: calc(0.8rem * var(--font-scale, 1));
   color: #7fb6f5;
   margin-top: 4px;
+}
+
+.main-crop-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.main-crop-info {
+  flex: 1;
+  min-width: 180px;
+}
+
+.main-crop-eyebrow {
+  font-size: calc(0.9rem * var(--font-scale, 1));
+  color: #93a2ba;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.main-crop-name {
+  font-size: calc(1.6rem * var(--font-scale, 1));
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.main-crop-desc {
+  font-size: calc(1.05rem * var(--font-scale, 1));
+  color: #cdd8ea;
+  margin: 10px 0 0;
+}
+
+.plant-illust {
+  width: 130px;
+  flex: 0 0 auto;
+}
+
+.plant-ground {
+  fill: rgba(255, 255, 255, 0.08);
+}
+
+.plant-stem,
+.plant-leaf ellipse,
+.plant-bud {
+  transition:
+    fill 1s ease,
+    stroke 1s ease,
+    opacity 1s ease;
+}
+
+.plant-leaf {
+  transition: transform 1s ease;
+}
+
+.plant-stem {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.plant-illust.safe .plant-stem {
+  stroke: #3fae6a;
+}
+
+.plant-illust.safe .plant-leaf ellipse {
+  fill: #3fae6a;
+}
+
+.plant-illust.safe .plant-leaf {
+  transform: rotate(-6deg);
+}
+
+.plant-illust.safe .plant-bud {
+  fill: #ffd166;
+  opacity: 1;
+}
+
+.plant-illust.caution .plant-stem {
+  stroke: #c9a227;
+}
+
+.plant-illust.caution .plant-leaf ellipse {
+  fill: #c9a227;
+}
+
+.plant-illust.caution .plant-leaf {
+  transform: rotate(22deg);
+}
+
+.plant-illust.caution .plant-bud {
+  fill: #c9a227;
+  opacity: 0.8;
+}
+
+.plant-illust.danger .plant-stem {
+  stroke: #8a5a3a;
+}
+
+.plant-illust.danger .plant-leaf ellipse {
+  fill: #8a5a3a;
+}
+
+.plant-illust.danger .plant-leaf {
+  transform: rotate(46deg) translateY(4px);
+}
+
+.plant-illust.danger .plant-bud {
+  fill: #6b4a30;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plant-leaf,
+  .plant-stem,
+  .plant-leaf ellipse,
+  .plant-bud {
+    transition: none;
+  }
 }
 
 .crop-section {
