@@ -88,7 +88,7 @@ watch(() => props.weatherList, fetchRunningMusic, { immediate: true })
 .music-embed {
   display: block;
   width: 100%;
-  max-width: 260px;
+  max-width: 400px;
   aspect-ratio: 16 / 9;
   margin: 0 auto;
   border-radius: 6px;
