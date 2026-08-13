@@ -9,6 +9,7 @@ import axios from 'axios'
 import BaseDashboardCard from '../components/exercise/BaseDashboardCard.vue'
 import SearchBar from '../components/exercise/SearchBar.vue'
 import WeatherCard from '../components/exercise/WeatherCard.vue'
+import CurrentLocationForecastCard from '../components/exercise/CurrentLocationForecastCard.vue'
 import { useFavoritesStore } from '../stores/favoritesStore'
 
 const router = useRouter()
@@ -102,6 +103,8 @@ const handleDetailJump = (id) => {
 
 <template>
   <div class="dashboard-wrapper">
+    <CurrentLocationForecastCard />
+
     <BaseDashboardCard>
       <SearchBar :current-query="searchQuery" @update-query="(val) => (searchQuery = val)" />
       <div v-if="recentSearches.length" class="recent-search-chips">
