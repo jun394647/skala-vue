@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import CropSettings from './components/farm/CropSettings.vue'
 
 const farmLocation = { name: '이천', query: 'Icheon-si,KR' }
 
@@ -14,6 +15,14 @@ const forecast = ref([])
 const air = ref(null)
 const isLoading = ref(true)
 const hasError = ref(false)
+
+const BIG_TEXT_KEY = 'farm-big-text'
+const bigText = ref(localStorage.getItem(BIG_TEXT_KEY) === '1')
+
+const toggleBigText = () => {
+  bigText.value = !bigText.value
+  localStorage.setItem(BIG_TEXT_KEY, bigText.value ? '1' : '0')
+}
 
 const crops = [
   {
@@ -88,6 +97,10 @@ const cropStatus = computed(() => {
     .sort((a, b) => levelWeight[b.level] - levelWeight[a.level])
 })
 
+const showSettings = ref(false)
+const selectedCropIds = ref(crops.map((crop) => crop.id))
+const visibleCropStatus = computed(() => cropStatus.value.filter((crop) => selectedCropIds.value.includes(crop.id)))
+
 const levelLabel = { danger: '위험', caution: '주의', safe: '안전' }
 
 const daylightHours = computed(() => {
@@ -124,9 +137,21 @@ const weatherEmoji = (iconCode) => {
   return map[prefix] ?? '🌡️'
 }
 
-const formatHour = (unixSeconds) => {
-  const hour = new Date(unixSeconds * 1000).getHours()
-  return `${hour}시`
+const startOfDay = (date) => {
+  const start = new Date(date)
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+
+const dayDiffPrefix = (dayDiff) => {
+  if (dayDiff <= 0) return ''
+  if (dayDiff === 1) return '내일 '
+  return `${dayDiff}일 후 `
+}
+
+const dayDiffLabel = (dayDiff) => {
+  if (dayDiff === 1) return '내일'
+  return `${dayDiff}일 후`
 }
 
 const fetchWeather = async () => {
@@ -135,7 +160,7 @@ const fetchWeather = async () => {
   try {
     const [weatherRes, forecastRes] = await Promise.all([
       axios.get(`${WEATHER_URL}?q=${farmLocation.query}&appid=${API_KEY}&units=metric&lang=kr`),
-      axios.get(`${FORECAST_URL}?q=${farmLocation.query}&appid=${API_KEY}&units=metric&lang=kr&cnt=6`),
+      axios.get(`${FORECAST_URL}?q=${farmLocation.query}&appid=${API_KEY}&units=metric&lang=kr&cnt=16`),
     ])
 
     const data = weatherRes.data
@@ -155,11 +180,24 @@ const fetchWeather = async () => {
       sunset: data.sys.sunset,
       rainChance,
     }
-    forecast.value = forecastRes.data.list.map((entry) => ({
-      time: formatHour(entry.dt),
-      temp: Math.round(entry.main.temp),
-      icon: entry.weather[0].icon,
-      pop: Math.round((entry.pop ?? 0) * 100),
+    const todayStart = startOfDay(new Date())
+    const rawSlots = forecastRes.data.list.map((entry) => {
+      const date = new Date(entry.dt * 1000)
+      return {
+        hour: date.getHours(),
+        dayDiff: Math.round((startOfDay(date) - todayStart) / 86400000),
+        temp: Math.round(entry.main.temp),
+        icon: entry.weather[0].icon,
+        pop: Math.round((entry.pop ?? 0) * 100),
+      }
+    })
+    forecast.value = rawSlots.map((slot, index) => ({
+      time: `${dayDiffPrefix(slot.dayDiff)}${slot.hour}시`,
+      temp: slot.temp,
+      icon: slot.icon,
+      pop: slot.pop,
+      isNewDay: index > 0 && slot.dayDiff !== rawSlots[index - 1].dayDiff,
+      dayLabel: slot.dayDiff > 0 ? dayDiffLabel(slot.dayDiff) : '',
     }))
 
     try {
@@ -181,15 +219,31 @@ onMounted(fetchWeather)
 </script>
 
 <template>
-  <div class="farm-app">
+  <div class="farm-app" :class="{ 'big-text': bigText }">
     <div class="farm-shell">
+      <div class="accessibility-bar">
+        <button
+          type="button"
+          class="big-text-toggle"
+          :aria-pressed="bigText"
+          @click="toggleBigText"
+        >
+          <span aria-hidden="true">🔍</span> 가나다 글씨 크게
+        </button>
+      </div>
+
       <header class="farm-header">
         <h1>🌾 오늘의 농가 날씨</h1>
         <p class="subtitle">{{ farmLocation.name }} · 품목별 위험을 한눈에 확인하세요</p>
       </header>
 
-      <p v-if="isLoading" class="status-text">날씨 정보를 불러오는 중입니다...</p>
-      <p v-else-if="hasError" class="status-text error">날씨 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <div class="settings-bar">
+        <button class="settings-button" @click="showSettings = true">⚙️ 품목 설정</button>
+      </div>
+      <CropSettings :crops="crops" v-model:selected="selectedCropIds" :open="showSettings" @close="showSettings = false" />
+
+      <p v-if="isLoading" class="status-text" role="status" aria-live="polite">날씨 정보를 불러오는 중입니다...</p>
+      <p v-else-if="hasError" class="status-text error" role="alert" aria-live="polite">날씨 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
 
       <template v-else-if="weather">
         <section class="hero-card">
@@ -202,25 +256,30 @@ onMounted(fetchWeather)
         </section>
 
         <section class="forecast-strip">
-          <div class="forecast-title">앞으로 몇 시간 예보</div>
+          <div class="forecast-title">오늘 · 내일 시간별 예보</div>
           <div class="forecast-row">
-            <div v-for="(slot, index) in forecast" :key="index" class="forecast-slot">
-              <div class="forecast-time">{{ slot.time }}</div>
-              <div class="forecast-icon">{{ weatherEmoji(slot.icon) }}</div>
-              <div class="forecast-temp">{{ slot.temp }}°</div>
-              <div class="forecast-pop">☔ {{ slot.pop }}%</div>
-            </div>
+            <template v-for="(slot, index) in forecast" :key="index">
+              <div v-if="slot.isNewDay" class="forecast-divider">
+                <span class="forecast-divider-label">{{ slot.dayLabel }}</span>
+              </div>
+              <div class="forecast-slot">
+                <div class="forecast-time">{{ slot.time }}</div>
+                <div class="forecast-icon">{{ weatherEmoji(slot.icon) }}</div>
+                <div class="forecast-temp">{{ slot.temp }}°</div>
+                <div class="forecast-pop">☔ {{ slot.pop }}%</div>
+              </div>
+            </template>
           </div>
         </section>
 
         <section class="crop-section">
           <div class="crop-section-title">품목별 위험 안내</div>
           <div class="crop-list">
-            <div v-for="crop in cropStatus" :key="crop.id" class="crop-card" :class="crop.level">
+            <div v-for="crop in visibleCropStatus" :key="crop.id" class="crop-card" :class="crop.level">
               <div class="crop-card-head">
-                <span class="crop-icon">{{ crop.icon }}</span>
+                <span class="crop-icon" aria-hidden="true">{{ crop.icon }}</span>
                 <span class="crop-name">{{ crop.name }}</span>
-                <span class="crop-badge" :class="crop.level">{{ levelLabel[crop.level] }}</span>
+                <span class="crop-badge" :class="crop.level" :aria-label="`${crop.name}, ${levelLabel[crop.level]} 등급`">{{ levelLabel[crop.level] }}</span>
               </div>
               <ul class="crop-messages">
                 <li v-for="(msg, index) in crop.messages" :key="index">{{ msg }}</li>
@@ -265,6 +324,7 @@ onMounted(fetchWeather)
 
 <style scoped>
 .farm-app {
+  --font-scale: 1;
   min-height: 100vh;
   padding: 32px 16px 60px;
   background: radial-gradient(circle at 20% 0%, #1b2b45 0%, #0c1526 55%, #08101c 100%);
@@ -272,9 +332,41 @@ onMounted(fetchWeather)
   color: #f3f6fa;
 }
 
+.farm-app.big-text {
+  --font-scale: 1.3;
+}
+
 .farm-shell {
   max-width: 640px;
   margin: 0 auto;
+}
+
+.accessibility-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.big-text-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(243, 167, 18, 0.5);
+  background: rgba(243, 167, 18, 0.12);
+  color: #f3d9a0;
+  font-size: calc(1rem * var(--font-scale, 1));
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.big-text-toggle[aria-pressed='true'] {
+  background: #f3a712;
+  border-color: #f3a712;
+  color: #2a1c02;
 }
 
 .farm-header {
@@ -283,7 +375,7 @@ onMounted(fetchWeather)
 }
 
 .farm-header h1 {
-  font-size: 2.1rem;
+  font-size: calc(2.1rem * var(--font-scale, 1));
   font-weight: 800;
   margin: 0 0 6px;
   color: #ffffff;
@@ -291,14 +383,31 @@ onMounted(fetchWeather)
 }
 
 .subtitle {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   color: #a8b6cc;
   margin: 0;
 }
 
+.settings-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.settings-button {
+  font-size: calc(1.05rem * var(--font-scale, 1));
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.07);
+  color: #f3f6fa;
+  cursor: pointer;
+}
+
 .status-text {
   text-align: center;
-  font-size: 1.2rem;
+  font-size: calc(1.2rem * var(--font-scale, 1));
   color: #a8b6cc;
   padding: 40px 0;
 }
@@ -323,41 +432,41 @@ onMounted(fetchWeather)
   position: absolute;
   right: -10px;
   top: -20px;
-  font-size: 8rem;
+  font-size: calc(8rem * var(--font-scale, 1));
   opacity: 0.12;
   filter: blur(0.5px);
 }
 
 .hero-region {
-  font-size: 1rem;
+  font-size: calc(1rem * var(--font-scale, 1));
   color: #93a2ba;
   font-weight: 600;
   margin-bottom: 12px;
 }
 
 .hero-temp {
-  font-size: 5rem;
+  font-size: calc(5rem * var(--font-scale, 1));
   font-weight: 800;
   color: #ffffff;
   line-height: 1;
 }
 
 .hero-unit {
-  font-size: 2rem;
+  font-size: calc(2rem * var(--font-scale, 1));
   font-weight: 700;
   color: #f3a712;
   margin-left: 4px;
 }
 
 .hero-status {
-  font-size: 1.4rem;
+  font-size: calc(1.4rem * var(--font-scale, 1));
   font-weight: 600;
   margin-top: 10px;
   color: #e4ecfa;
 }
 
 .hero-feels {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   color: #93a2ba;
   margin-top: 6px;
 }
@@ -369,7 +478,7 @@ onMounted(fetchWeather)
   border-radius: 999px;
   background: rgba(58, 130, 214, 0.2);
   color: #9cc4f5;
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 700;
 }
 
@@ -382,7 +491,7 @@ onMounted(fetchWeather)
 }
 
 .forecast-title {
-  font-size: 1rem;
+  font-size: calc(1rem * var(--font-scale, 1));
   font-weight: 700;
   color: #a8b6cc;
   margin-bottom: 12px;
@@ -403,25 +512,47 @@ onMounted(fetchWeather)
   padding: 12px 8px;
 }
 
+.forecast-divider {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.forecast-divider::before {
+  content: '';
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.forecast-divider-label {
+  writing-mode: vertical-rl;
+  font-size: calc(0.8rem * var(--font-scale, 1));
+  font-weight: 700;
+  color: #f3a712;
+}
+
 .forecast-time {
-  font-size: 0.85rem;
+  font-size: calc(0.85rem * var(--font-scale, 1));
   color: #93a2ba;
   margin-bottom: 6px;
 }
 
 .forecast-icon {
-  font-size: 1.6rem;
+  font-size: calc(1.6rem * var(--font-scale, 1));
   margin-bottom: 6px;
 }
 
 .forecast-temp {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 700;
   color: #f3f6fa;
 }
 
 .forecast-pop {
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--font-scale, 1));
   color: #7fb6f5;
   margin-top: 4px;
 }
@@ -431,7 +562,7 @@ onMounted(fetchWeather)
 }
 
 .crop-section-title {
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--font-scale, 1));
   font-weight: 800;
   color: #ffffff;
   margin-bottom: 12px;
@@ -474,18 +605,18 @@ onMounted(fetchWeather)
 }
 
 .crop-icon {
-  font-size: 1.5rem;
+  font-size: calc(1.5rem * var(--font-scale, 1));
 }
 
 .crop-name {
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--font-scale, 1));
   font-weight: 700;
   color: #f3f6fa;
   flex: 1;
 }
 
 .crop-badge {
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--font-scale, 1));
   font-weight: 800;
   padding: 4px 12px;
   border-radius: 999px;
@@ -510,7 +641,7 @@ onMounted(fetchWeather)
   margin: 0;
   padding-left: 20px;
   color: #cdd8ea;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--font-scale, 1));
   line-height: 1.6;
 }
 
@@ -537,7 +668,7 @@ onMounted(fetchWeather)
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 1.4rem;
+  font-size: calc(1.4rem * var(--font-scale, 1));
 }
 
 .info-icon.humidity {
@@ -557,19 +688,19 @@ onMounted(fetchWeather)
 }
 
 .info-label {
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   color: #93a2ba;
   margin-bottom: 4px;
 }
 
 .info-value {
-  font-size: 1.3rem;
+  font-size: calc(1.3rem * var(--font-scale, 1));
   font-weight: 700;
   color: #f3f6fa;
 }
 
 .info-sub {
-  font-size: 0.95rem;
+  font-size: calc(0.95rem * var(--font-scale, 1));
   font-weight: 600;
   color: #93a2ba;
 }
@@ -582,7 +713,7 @@ onMounted(fetchWeather)
 }
 
 .sunlight-label {
-  font-size: 1.05rem;
+  font-size: calc(1.05rem * var(--font-scale, 1));
   font-weight: 600;
   margin-bottom: 10px;
   color: #dbe4f2;
