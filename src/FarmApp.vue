@@ -875,7 +875,6 @@ onMounted(fetchWeather)
   border-radius: 18px;
   padding: 16px 18px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .crop-card-head {
