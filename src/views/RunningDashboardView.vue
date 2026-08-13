@@ -82,9 +82,9 @@ onMounted(() => {
 }
 .quote-panel {
   position: relative;
-  margin-bottom: 15px;
-  padding: 36px 56px 30px 28px;
-  border-radius: 14px;
+  margin-bottom: 10px;
+  padding: 18px 52px 16px 20px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #1f9d6b, #1a7ea8);
   box-shadow: 0 8px 24px rgba(26, 126, 168, 0.25);
 }
@@ -92,17 +92,18 @@ onMounted(() => {
   margin: 0;
   font-family: Georgia, 'Noto Serif KR', serif;
   font-style: italic;
-  font-size: 1.4rem;
-  line-height: 1.5;
+  font-size: 1.05rem;
+  line-height: 1.4;
   letter-spacing: -0.2px;
   color: #ffffff;
 }
 .quote-next-btn {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: 36px;
-  height: 36px;
+  right: 12px;
+  bottom: 50%;
+  transform: translateY(50%);
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);

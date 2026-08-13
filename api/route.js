@@ -47,6 +47,7 @@ export default async function handler(req, res) {
       path,
       ascent: feature.properties?.ascent ?? null,
       descent: feature.properties?.descent ?? null,
+      distanceMeters: feature.properties?.summary?.distance ?? null,
     })
   } catch (error) {
     res.status(500).json({ error: `경로 조회 중 오류: ${error.message}` })

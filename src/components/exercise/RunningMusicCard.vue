@@ -80,18 +80,23 @@ watch(() => props.weatherList, fetchRunningMusic, { immediate: true })
 
 <style scoped>
 .running-music-card {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   --el-card-bg-color: var(--ex-card-bg, #fff);
+  --el-card-padding: 12px;
   color: var(--ex-text, #2c3e50);
 }
 .music-embed {
+  display: block;
   width: 100%;
+  max-width: 260px;
   aspect-ratio: 16 / 9;
+  margin: 0 auto;
   border-radius: 6px;
 }
 .music-title {
-  margin: 8px 0 0;
-  font-size: var(--ex-font-sm, 14px);
+  margin: 6px 0 0;
+  font-size: var(--ex-font-xs, 12px);
+  text-align: center;
   color: var(--ex-text, #2c3e50);
 }
 </style>
