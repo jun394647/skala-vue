@@ -30,7 +30,24 @@ const loadKakaoMapSdk = () => {
   return kakaoSdkPromise
 }
 
-const renderMap = async (latitude, longitude) => {
+const EARTH_RADIUS_M = 6371000
+
+const buildLoopPoints = (lat, lng, distanceKm) => {
+  const radiusM = (distanceKm * 1000) / (2 * Math.PI)
+  const steps = 32
+  const points = []
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI
+    const dx = radiusM * Math.sin(angle)
+    const dy = radiusM * (1 - Math.cos(angle))
+    const dLat = (dy / EARTH_RADIUS_M) * (180 / Math.PI)
+    const dLng = (dx / (EARTH_RADIUS_M * Math.cos((lat * Math.PI) / 180))) * (180 / Math.PI)
+    points.push({ lat: lat + dLat, lng: lng + dLng })
+  }
+  return points
+}
+
+const renderMap = async (latitude, longitude, courseKm) => {
   try {
     await loadKakaoMapSdk()
     await nextTick()
@@ -38,6 +55,23 @@ const renderMap = async (latitude, longitude) => {
     const center = new window.kakao.maps.LatLng(latitude, longitude)
     const map = new window.kakao.maps.Map(mapContainer.value, { center, level: 4 })
     new window.kakao.maps.Marker({ position: center, map })
+
+    if (courseKm) {
+      const path = buildLoopPoints(latitude, longitude, courseKm).map(
+        (p) => new window.kakao.maps.LatLng(p.lat, p.lng),
+      )
+      new window.kakao.maps.Polyline({
+        map,
+        path,
+        strokeWeight: 4,
+        strokeColor: '#27ae60',
+        strokeOpacity: 0.9,
+        strokeStyle: 'solid',
+      })
+      const bounds = new window.kakao.maps.LatLngBounds()
+      path.forEach((point) => bounds.extend(point))
+      map.setBounds(bounds)
+    }
   } catch (error) {
     console.error('🔴 카카오맵 로딩 실패:', error)
   }
@@ -45,18 +79,38 @@ const renderMap = async (latitude, longitude) => {
 
 const pickRoute = (w) => {
   if (w.rain) {
-    return { distance: '실내 3km 대체 추천', tip: '비가 오고 있어요. 러닝머신이나 실내 운동을 추천해요.' }
+    return {
+      distance: '실내 3km 대체 추천',
+      distanceKm: null,
+      tip: '비가 오고 있어요. 러닝머신이나 실내 운동을 추천해요.',
+    }
   }
   if (w.temp >= 30) {
-    return { distance: '3km 짧은 루프', tip: '더운 날씨예요. 그늘이 많은 짧은 코스로 가볍게 다녀오세요.' }
+    return {
+      distance: '3km 짧은 루프',
+      distanceKm: 3,
+      tip: '더운 날씨예요. 그늘이 많은 짧은 코스로 가볍게 다녀오세요.',
+    }
   }
   if (w.temp <= 3) {
-    return { distance: '3km 짧은 루프', tip: '쌀쌀해요. 몸을 충분히 풀고 짧게 시작하세요.' }
+    return {
+      distance: '3km 짧은 루프',
+      distanceKm: 3,
+      tip: '쌀쌀해요. 몸을 충분히 풀고 짧게 시작하세요.',
+    }
   }
   if (w.windSpeed >= 8) {
-    return { distance: '4km 순환 코스', tip: '바람이 강해요. 바람을 등지고 도는 순환 코스가 좋아요.' }
+    return {
+      distance: '4km 순환 코스',
+      distanceKm: 4,
+      tip: '바람이 강해요. 바람을 등지고 도는 순환 코스가 좋아요.',
+    }
   }
-  return { distance: '5km 순환 코스', tip: '러닝하기 좋은 날씨예요! 평소보다 조금 더 달려보세요.' }
+  return {
+    distance: '5km 순환 코스',
+    distanceKm: 5,
+    tip: '러닝하기 좋은 날씨예요! 평소보다 조금 더 달려보세요.',
+  }
 }
 
 const fetchLocationWeather = () => {
@@ -82,7 +136,7 @@ const fetchLocationWeather = () => {
         }
         routeAdvice.value = pickRoute(weather.value)
         status.value = 'ready'
-        renderMap(latitude, longitude)
+        renderMap(latitude, longitude, routeAdvice.value.distanceKm)
       } catch (error) {
         console.error('🔴 위치 기반 날씨 조회 실패:', error)
         status.value = 'error'
