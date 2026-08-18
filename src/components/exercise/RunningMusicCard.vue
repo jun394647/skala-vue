@@ -1,5 +1,6 @@
 <script setup>
 // 가이드 범위를 넘어선 추가 기능 — YouTube Data API로 날씨에 맞는 러닝 음악 추천
+// 검색은 서버 프록시(api/youtube.js)를 거친다 — GitHub Pages엔 서버가 없어 404가 정상이며, 이 경우 안내 문구로 대체한다
 import { ref, watch } from 'vue'
 import axios from 'axios'
 
@@ -10,13 +11,11 @@ const props = defineProps({
   },
 })
 
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY
-const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search'
-
 const video = ref(null)
 const moodLabel = ref('')
 const isLoading = ref(false)
 const hasError = ref(false)
+const isUnavailable = ref(false)
 
 const pickMood = (list) => {
   const avgTemp = list.reduce((sum, item) => sum + item.temp, 0) / list.length
@@ -38,23 +37,19 @@ const fetchRunningMusic = async (list) => {
   if (!list.length) return
   isLoading.value = true
   hasError.value = false
+  isUnavailable.value = false
   const mood = pickMood(list)
   moodLabel.value = mood.label
   try {
-    const response = await axios.get(SEARCH_URL, {
-      params: {
-        part: 'snippet',
-        q: mood.query,
-        type: 'video',
-        maxResults: 1,
-        key: YOUTUBE_API_KEY,
-      },
-    })
-    const item = response.data.items?.[0]
-    video.value = item ? { id: item.id.videoId, title: item.snippet.title } : null
+    const response = await axios.get('/api/youtube', { params: { q: mood.query } })
+    video.value = response.data.video ?? null
   } catch (error) {
-    console.error('🔴 러닝 음악 추천 실패:', error)
-    hasError.value = true
+    if (error.response?.status === 404) {
+      isUnavailable.value = true
+    } else {
+      console.error('🔴 러닝 음악 추천 실패:', error)
+      hasError.value = true
+    }
     video.value = null
   } finally {
     isLoading.value = false
@@ -69,7 +64,8 @@ watch(() => props.weatherList, fetchRunningMusic, { immediate: true })
     <template #header>🎵 {{ moodLabel || '오늘의 러닝 음악' }}</template>
 
     <p v-if="isLoading">추천곡을 찾는 중입니다...</p>
-    <p v-else-if="hasError">추천곡을 불러오지 못했습니다. YouTube API 키를 확인해 주세요.</p>
+    <p v-else-if="isUnavailable">실시간 음악 추천은 Vercel 배포에서만 제공돼요.</p>
+    <p v-else-if="hasError">추천곡을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
     <template v-else-if="video">
       <iframe class="music-embed" :src="`https://www.youtube.com/embed/${video.id}`" title="추천 러닝 음악" frameborder="0" allowfullscreen></iframe>
       <p class="music-title">{{ video.title }}</p>
