@@ -33,6 +33,8 @@ VITE_MOVIE_API_KEY=카카오 JavaScript 키 (러닝 코스 지도)
 ORS_API_KEY=OpenRouteService 키 (러닝 코스 실도로 경로, 서버 전용 — Vercel에만 등록, VITE_ 접두사 없음)
 ```
 
+`VITE_` 접두사 키는 빌드 시 클라이언트 번들에 그대로 포함됩니다. GitHub Secret Scanning이 `VITE_YOUTUBE_API_KEY`를 공개 노출로 탐지해(2026-08-13) 키를 재발급하고 Google Cloud Console에서 HTTP 리퍼러를 배포 도메인으로 제한했습니다(2026-08-18).
+
 ## Project Setup
 
 ```sh
